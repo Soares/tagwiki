@@ -1,5 +1,5 @@
+module Parser where
 import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Expr
 import Control.Monad hiding ( when )
 import Control.Applicative ( (<*) )
 import Data.Either
@@ -45,7 +45,7 @@ name = try quoted <|> except "\"\t "
 
 -- Second line
 secondLine :: GenParser Char st [Modifier]
-secondLine = many1 modifier <* newline
+secondLine = many modifier <* newline
 modifier :: GenParser Char st Modifier
 modifier = try (Cat <$> category)
        <|> try (Qal <$> qualifier)
@@ -73,22 +73,20 @@ fill = try (addSec <$> section)
 event :: GenParser Char st Event
 event = bang >> liftM3 Event tag date block
 appearance :: GenParser Char st Appearance
-appearance = at >> liftM2 Appearance (tag <* optional at) block
+appearance = at >> liftM2 Appearance (reference <* optional at) block
 attribute :: GenParser Char st Attribute
 attribute = colin >> liftM3 Attribute key (many unit) block
 
 
 
--- block :: GenParser Char st [Unit]
+block :: GenParser Char st [Unit]
 block = do
     clear <- many unit
     feed <- Str <$> end
     white <- lookAhead whitespace
-    if null white
-        then return $ clear ++ [feed]
-        else do
-            block <- blockWithWhite white
-            return $ clear ++ (feed:block)
+    if null white then return $ clear ++ [feed] else do
+        blk <- blockWithWhite white
+        return $ clear ++ (feed:blk)
 -- Matches specific lines in a block
 blockWithWhite :: String -> GenParser Char st [Unit]
 blockWithWhite w = try (liftM2 (++) chunk $ blockWithWhite w) <|> return []
@@ -159,13 +157,16 @@ date = optional at >> whitespace >> (try (Exactly <$> nakedDateAndTime)
 dateExpr :: GenParser Char st DateExpression
 dateExpr = try (between obrace cbrace (Exactly <$> expression))
        <|> try (between obrace cbrace (liftM2 Range expression endExpr))
-       where endExpr = comma >> whitespace >> expression
+       where endExpr = comma >> whitespace >> option Present expression
 -- Date calculation expression
-expression :: GenParser Char st Calc
+expression, terms, term :: GenParser Char st Calc
 expression = terms `chainl1` (whitespace >> return Clobber)
 terms = term `chainl1` addsub
     where addsub = try (plus >> return Plus) <|> try (minus >> return Minus)
 term = try (between oparen cparen expression)
+   <|> try (More <$> (plus >> expression))
+   <|> try (Less <$> (minus >> expression))
+   <|> try (questionMark >> return Unknown)
    <|> try (Simply <$> when <* anyWhite)
    <|> try (From <$> reference <* at)
    <|> try (From <$> reference <* anyWhite)
@@ -179,24 +180,24 @@ when = try (Abs <$> (anyWhite >> absDate))
    <?> "date or time"
 -- Absolute Date
 absDate :: GenParser Char st AbsDate
-absDate = year >>= month >>= day where
-    make yr    = AbsDate yr Nothing Nothing
-    year       = make                     <$> liftM2 Year number era
-    month date = (\m -> date{absMonth=m}) <$> sec slash
-    day   date = (\d -> date{absDay=d  }) <$> sec slash
+absDate = getYear >>= getMonth >>= getDay where
+    make yr  = AbsDate yr Nothing Nothing
+    getYear     = make                     <$> liftM2 Year number era
+    getMonth dt = (\m -> dt{absMonth=m}) <$> sec slash
+    getDay   dt = (\d -> dt{absDay=d  }) <$> sec slash
 -- Relative Date
 relDate :: GenParser Char st RelDate
-relDate = year >>= month >>= day where
-    year       = (\y -> whenever{relYear=y     }) <$> maybeNumber <* slash
-    month date = (\m -> date    {relMonth=m    }) <$> maybeNumber
-    day   date = (\d -> date    {relDay=d      }) <$> sec slash
+relDate = getYear >>= getMonth >>= getDay where
+    getYear     = (\y -> whenever{relYear=y     }) <$> maybeNumber <* slash
+    getMonth dt = (\m -> dt    {relMonth=m    }) <$> maybeNumber
+    getDay   dt = (\d -> dt    {relDay=d      }) <$> sec slash
 -- Time
 time :: GenParser Char st Time
-time = hour >>= minute >>= second >>= detail where
-    hour        = (\h -> noclock{hour=h}) <$> maybeNumber <* colin
-    minute time = (\m -> time{minute=m }) <$> maybeNumber
-    second time = (\s -> time{second=s }) <$> sec dot
-    detail time = (\d -> time{detail=d }) <$> sec dot
+time = getHour >>= getMinute >>= getSecond >>= getDetail where
+    getHour     = (\h -> noclock{hour=h}) <$> maybeNumber <* colin
+    getMinute t = (\m -> t{minute=m }) <$> maybeNumber
+    getSecond t = (\s -> t{second=s }) <$> sec dot
+    getDetail t = (\d -> t{detail=d }) <$> sec dot
 -- A lonely lonely year
 year :: GenParser Char st RelDate
 year = (\y -> whenever{relYear=Just y}) <$> number
@@ -209,7 +210,7 @@ xKey = " \t\n"
 xText = "|{\n"
 xModifier = '^':'$':xTag
 
-tag, text, modText :: GenParser Char st String
+tag, key, text, modText :: GenParser Char st String
 tag = except xTag
 key = except xKey
 text = many1 $ try escWhite <|> escaping xText
@@ -226,9 +227,10 @@ trail = comma >> modText
 
 -- Operators
 -- Operators that only occur in date calculations
-plus, minus :: GenParser Char st ()
+plus, minus, questionMark :: GenParser Char st ()
 plus = operator '+'
 minus = operator '-'
+questionMark = operator '?'
 -- Operators that occur at the top level
 bang, at :: GenParser Char st ()
 bang = designator '!'

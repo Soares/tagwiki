@@ -189,6 +189,7 @@ Event synonyms
     first
     begin
     birth
+    dawn
     born
     creation
     created
@@ -205,4 +206,5 @@ Event synonyms
     destruction
     destroyed
     end
+    fall
     last

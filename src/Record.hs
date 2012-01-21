@@ -40,7 +40,7 @@ data Unit = Str String
           deriving (Eq, Read, Show)
 
 -- A key: value pair with an optional attribute block below
-data Attribute = Attribute { attrKey   :: String
+data Attribute = Attribute { attrRef   :: String
                            , attrValue :: [Unit]
                            , attrBlock :: [Unit] }
                            deriving (Eq, Read, Show)
@@ -51,7 +51,7 @@ data Event = Event { eventName :: String
                    , eventText :: [Unit]
                    } deriving (Eq, Read, Show)
 
-data Appearance = Appearance { appRef  :: String
+data Appearance = Appearance { appRef  :: Reference
                              , appText :: [Unit]
                              } deriving (Eq, Read, Show)
 
@@ -70,6 +70,10 @@ data DateExpression = Exactly Calc
 -- The means by which to resolve a date
 data Calc = Plus Calc Calc
           | Minus Calc Calc
+          | More Calc
+          | Less Calc
+          | Present
+          | Unknown
           | Clobber Calc Calc
           | From Reference
           | Simply When
