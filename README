@@ -1,0 +1,208 @@
++ First Line,\+ Is "comma separated" tags
+^Prefix $Suffix ,Trail #Category (qualifier)
+
+Markdown syntax applies.
+non-markdown escape characters: \\\| \\\{ \\\\ \\s
+  \\s becomes \s, a backslash that can survive markdown's escaping.
+  In first line \\+ and \\" also apply
+  In first & second line, \\^ \\$ \\, \\# \\( and \\) also apply
+  In tags, \\! \\@ \\+ \\- and \\" also apply
+
+:key value
+  Optional description about key and value is indented like this.
+  Key must be one word only. Escape spaces if you need them.
+  Value may contain links, etc.
+  In a block that follows the same rules
+  as an event block
+
+!event definition {followed by date}
+  Text describing event
+  Text is parsed
+  until a line with less whitespace at the beginning is found
+    (Specifically, the whitespace must match the original whitespace at
+    the begining. Changing from spaces to tabs also breaks the block.)
+
+  (blank lines nonwithstanding)
+
+! Absolute dates @ 1955AT/10/20
+  work too, if you end the event with an @ sign
+
+! Technically @ 10AT the extra text is
+  counted as part of the block.
+
+@event participation
+  Text describing participation
+
+
+Text can contains |links to tags|, which |can have #categories (and qualifiers)|
+and may |also, have different text| |note, that, only| the first comma counts
+  That last link links to 'note' with the text 'that, only'
+You may also |link to an ! event| using a bang.
+Links may not contain any unescaped of !@\|\{}#()+-\/
+
+Note Files
+==========
+  Tags are comma-separated on the first line
+  Any tag starting with + has priority
+    (This is on a per-tag, not per-file basis)
+  Categories are hashmarked on the second line
+  Qalifiers are surrounded by parenthesis on the second line
+  Prefixes are carat-prefixed, suffixes are dollar-prefixed,
+  trails are comma-prefixed
+  Past the second line, files are parsed normally
+  Each category will be in the tag file
+  For tags without qualifiers, each tag will be in the tags file
+  For tags with qualifiers, each tag will be in the tag file once per qualifier
+    Ex. Patrick, Pat    →     Patrick (Sern)
+        (Fiurge) (Sern)       Patrick (Fiurge)
+                              Pat (Sern)
+                              Pat (Fiurge)
+  For Notes, prefixes, suffixes, and trails are all ignored.
+
+Character Files
+===============
+  Similar to Note files, with the following differences:
+  The first tag is the name, further tags are nicknames
+  The name is split into multiple components.
+    It is split on spaces, except for components within quotes
+    Components in quotes have the quotes removed.
+  The following tags are generated:
+    Each nickname
+    Each category
+    All names
+    All names with all suffixes and trails (Full Name)
+    First name
+    Last name (if applicable)
+    First and last name (if there are more than two names)
+    For each prefix:
+      The prefix, the full name, and all suffixes (Titled Name)
+      The prefix, the last name, and all suffixes (Formal Name)
+    If the name has priority, then all tags using parts of the name
+      inherit that priority.
+    Examples ([+] denotes priority, reason for each name displayed on right)
+
+
+Eric Avi    →   Eric            First Name
+^Mr.            Eric Avi        Full Name
+                Mr. Eric Avi    Titled Name
+                Mr. Avi         Formal Name
+
+
++Kyte Mallorian, Last Lord  →   Cool                    Category
+^Lord ^Prince #Cool             Kyte                    First Name      [+]
+                                Kyte Mallorian          Full Name       [+]
+                                Last Lord               Nickname
+                                Lord Kyte Mallorian     Titled Name (1) [+]
+                                Lord Mallorian          Formal Name (1) [+]
+                                Mallorian               Last Name       [+]
+                                Prince Kyte Mallorian   Titled Name (2) [+]
+                                Prince Mallorian        Formal name (2) [+]
+
+
+Joseph Two Middlenames "Van Halen", +Joe, Joe Shmoe
+^Mr. ^Grand General $Jr. ,III #cat1 #cat2
+
+→   cat1                                                        Category (1)
+    cat2                                                        Category (2)
+    Grand General Joseph Two Middlenames Van Halen Jr., III     Titled Name (2)
+    Grand General Van Halen Jr., III                            Formal Name (2)
+    Joe                                                         Nickname (1) [+]
+    Joe Shmoe                                                   Nickname (2)
+    Joseph                                                      First Name
+    Joseph Two Middlenames Van Halen                            All Names
+    Joseph Two Middlenames Van Halen Jr., III                    Full Name
+    Joseph Van Halen                                            First & last
+    Mr. Joseph Two Middlenames Van Halen Jr., III               Titled Name (1)
+    Mr. Van Halen Jr., III                                      Formal Name (1)
+    Van Halen                                                   Last Name
+
+
+Casinsky                      →    Casinsky (Fairfayette)          Full name
+^Officer (Fairfayette) #PoPo      Officer Casinsky (Fairfayette)  Titled name
+                                  PoPo                            Category
+
+
+Place Files
+===========
+  Similar to Note files, with the following differences:
+  Each place may only have one prefix
+  Prefixes past the first will be ignored
+  Each place must have a prefix
+    Unless it is a root location
+  Suffixes are included in each tag
+  In the case of name conflicts, prefixes are included in each tag as qualifiers
+  Ex. Something                 →   Something Else Entirely
+      $Providence ^Atrea            Something Providence (Atrea)
+      ...                           Something Providence (New Medici)
+      Something
+      $Providence ^New Medici
+      ...
+      Something
+      $Else Entirely ^Kaol
+
+
+Date Calculations
+=================
+
+{ Date calculations go in braces }
+
+{1955AT/06/03} This is just a date in the AT era
+{13:62.59.01} This is an hour, minute, second, and change
+You can add them together by puttin them close: {1955AT 7:00}
+You may leave syntax off the front, but not the back:
+{0AT //3 :.2} = 3 days, 2 seconds
+If any parts of a date or time are missing, they are 'relative' and must be
+added to something to work. (Note the 0AT above).
+
+Dates may include links (minus the optional text)
+{Kyte #Cool ! marriage //3 2:} = The same year and month as Kyte's marriage, on
+the 3rd day of the month at 2:00
+
+Notice how fragments override instead of adding. You may also add an subtract.
+{Kyte ! marriage + 10} Ten years past Kyte's marriage, same month & day
+
+NOTE: Links may contain numbers but not slashes. Therefore:
+{Kyte ! marriage 10AT/10/10} attempts to look up the event "marriage 10AT".
+To force an event to stop parsing, use the @ sign:
+{Kyte ! marriage @10AT} (same month, day, & time as Kyte's marriage, in the
+year 10AT)
+
+{Date Ranges have a start, and an end}
+  The start and the end are separated by a single comma.
+  The syntax is otherwise the same.
+  The beginning of a range can be accessed by the 'start' event
+  The end of a range can be accessed by the 'end' event
+
+{Dates may span lines ! but only @
+  + between tags. Tags may never @
+  + contain a newline.}
+If you link to something that is not a date
+  For example, if you link to a person or a range or a note
+The following events will be attempted:
+  start
+  duration ! start
+Failing that, the earliest defined event is used
+
+Event synonyms
+==============
+  The following events are synonyms for 'start':
+    first
+    begin
+    birth
+    born
+    creation
+    created
+    start
+
+  The following ranges are synonyms for 'duration':
+    alive
+    duration
+    life
+    timeframe
+
+  The following events are synonyms for 'end':
+    death
+    destruction
+    destroyed
+    end
+    last
