@@ -1,0 +1,85 @@
+module Parsing where
+import Control.Applicative ( (<*) )
+import Data.Functor
+import Data.List
+import Text.ParserCombinators.Parsec
+
+class Parseable a where
+    parser :: GenParser Char st a
+
+-- Parses and reads one or more digits
+number :: GenParser Char st Int
+number = read <$> many1 digit
+
+-- Parses zero or more digits, returning an Int if there were any digits
+maybeInt :: GenParser Char st (Maybe Int)
+maybeInt = many digit >>= \nums -> return $ case nums of
+    "" -> Nothing
+    x -> Just $ read x
+
+-- Given a mark, parses either the mark alone, the mark and an int, or nothing
+markedInt :: GenParser Char st () -> GenParser Char st (Maybe Int)
+markedInt mark = try (mark >> maybeInt) <|> return Nothing
+
+-- \s → \\\\
+quadrupleHack :: GenParser Char st String
+quadrupleHack = hack >> char 's' >> return "\\\\\\\\"
+
+-- Excludes newlines
+whitespace :: GenParser Char st String
+whitespace = many $ oneOf " \t"
+
+-- Includes newlines
+anyWhite :: GenParser Char st String
+anyWhite = many $ oneOf " \t\n"
+
+-- EOL or EOF
+eol :: GenParser Char st String
+eol = try (return <$> newline) <|> (eof >> return "")
+
+-- \\ -> \
+hackhack :: GenParser Char st Char
+hackhack = hack >> hack >> return '\\'
+
+-- '\ ' -> space, \t -> tab, '\n' -> newline
+escWhite :: GenParser Char st Char
+escWhite = try (hack >> space)
+       <|> try (hack >> tab)
+       <|> try (hack >> newline)
+       <?> "escaped whitespace"
+
+-- Ignored hack
+hack :: GenParser Char st ()
+hack = char '\\' >> return ()
+
+-- Parses a character not present in `chars`, unless escaped with a backslash.
+-- If escaped, 'unescapes' the character in the parsed string.
+-- Ex.
+--      parseTest (escaping "abc") "\a \b \c" → "a b c"
+--      parseTest (escaping "abc") "a  \b \c" → error (unescaped a)
+escaping :: String -> GenParser Char st Char
+escaping chars = try hackhack
+             <|> try (hack >> oneOf chars)
+             <|> noneOf (nub chars)
+             <?> "[^" ++ oneLine chars ++ "] or an escape sequence"
+             where oneLine = intercalate "\\n" . lines
+
+-- Parse a whole string of escaping characters
+except :: String -> GenParser Char st String
+except = many1 . escaping
+
+-- A whitespace-wrapped parser
+floating :: GenParser Char st a -> GenParser Char st a
+floating p = anyWhite >> p <* anyWhite
+
+-- A whitespace-wrapped no-op action
+operator :: String -> GenParser Char st ()
+operator c = anyWhite >> string c >> anyWhite >> return ()
+
+-- A whitespace-prefixed one-line no-op action
+designator :: String -> GenParser Char st ()
+designator c = whitespace >> string c >> return ()
+
+-- A whitespace-wrapped one-line no-op action
+marker :: String -> GenParser Char st ()
+marker c = whitespace >> string c >> whitespace >> return ()

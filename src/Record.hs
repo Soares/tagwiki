@@ -1,105 +1,75 @@
 module Record where
+import Body.Event
+import Body.Attribute
+import Body.Appearance
+import Body.Unit
+import Control.Applicative ( (<*) )
+import Control.Monad
+import Data.Functor
+import Modifier
+import Parsing
+import Reference ( Category, Qualifier )
+import qualified Symbols as Y
+import Tag ( tag )
+import Text.ParserCombinators.Parsec
 
 -- Unit data types
 data FileType = Character | Place | Note deriving (Eq, Read, Show)
-data Year = Year Int Era deriving (Eq, Read, Show)
-type Category = String
-type Qualifier = String
-type Prefix = String
-type Suffix = String
-type Trail = String
-type Era = String
+
+data Name = Name Bool String deriving (Eq, Ord, Read, Show)
+instance Parseable Name where
+    parser = whitespace >> liftM2 Name priority str where
+        priority = option False (pri >> return True)
+        escPri = (hack >> pri)
+        str = liftM2 (++) (option "" escPri) (tag <$> parser)
+        pri = string Y.priority
 
 -- A whole file
-data Record = Record { recordFiletype    :: FileType
-                     , recordTags        :: [Tag]
-                     , recordModifiers   :: [Modifier]
-                     , recordAttrs       :: [Attribute]
-                     , recordEvents      :: [Event]
-                     , recordAppearances :: [Appearance]
-                     , recordUnits       :: [Unit]
-                     } deriving (Eq, Read, Show)
-
--- Tags identifying the file
-data Tag = Tag { tagPpriority :: Bool
-               , tagName      :: String }
-               deriving (Eq, Ord, Show, Read)
-
--- Modifiers on the tags
-data Modifier = Cat Category
-              | Qal Qualifier
-              | Pre Prefix
-              | Suf Suffix
-              | Trl Trail
-              deriving (Eq, Show, Read)
-
--- A chunk of text
-data Unit = Str String
-          | Lnk (Reference, Maybe String)
-          | Dxp DateExpression
-          deriving (Eq, Read, Show)
-
--- A key: value pair with an optional attribute block below
-data Attribute = Attribute { attrRef   :: String
-                           , attrValue :: [Unit]
-                           , attrBlock :: [Unit] }
-                           deriving (Eq, Read, Show)
-
--- A specification of an event
-data Event = Event { eventName :: String
-                   , eventWhen :: DateExpression
-                   , eventText :: [Unit]
-                   } deriving (Eq, Read, Show)
-
-data Appearance = Appearance { appRef  :: Reference
-                             , appText :: [Unit]
-                             } deriving (Eq, Read, Show)
-
--- A reference to another file and/or event
-data Reference = Reference { refTag        :: String
-                           , refCategories :: [Category]
-                           , refQualifiers :: [Qualifier]
-                           , refEvents     :: [String]
-                           } deriving (Eq, Read, Show)
-
--- A date that needs to be resolved
-data DateExpression = Exactly Calc
-                    | Range Calc Calc
-                    deriving (Eq, Read, Show)
-
--- The means by which to resolve a date
-data Calc = Plus Calc Calc
-          | Minus Calc Calc
-          | More Calc
-          | Less Calc
-          | Present
-          | Unknown
-          | Clobber Calc Calc
-          | From Reference
-          | Simply When
-          deriving (Eq, Show, Read)
-
-data When = Abs AbsDate
-          | Rel RelDate
-          | At  Time
-          deriving (Eq, Show, Read)
-
-data AbsDate = AbsDate { absYear  :: Year
-                       , absMonth :: Maybe Int
-                       , absDay   :: Maybe Int
-                       } deriving (Eq, Read, Show)
-
-data RelDate = RelDate { relYear  :: Maybe Int
-                       , relMonth :: Maybe Int
-                       , relDay   :: Maybe Int
-                       } deriving (Eq, Read, Show)
-
-data Time = Time { hour   :: Maybe Int
-                 , minute :: Maybe Int
-                 , second :: Maybe Int
-                 , detail :: Maybe Int
-                 } deriving (Eq, Read, Show)
+data Record = Record { names       :: [Name]
+                     , categories  :: [Category]
+                     , qualifiers  :: [Qualifier]
+                     , modifiers   :: [Modifier]
+                     , attrs       :: [Attribute]
+                     , events      :: [Event]
+                     , appearances :: [Appearance]
+                     , units       :: [Unit]
+                     } deriving (Eq, Show)
+instance Parseable Record where
+    parser = do
+        tags <- firstLine
+        (cats, quals, mods) <- secondLine
+        fillers <- fill `manyTill` eof
+        let empty = Record tags cats quals mods [] [] [] []
+        return $ foldr id empty fillers
 
 
-whenever = RelDate Nothing Nothing Nothing
-noclock = Time Nothing Nothing Nothing Nothing
+
+-- First line
+firstLine :: GenParser Char st [Name]
+firstLine = (parser `sepBy` (designator Y.comma)) <* eol
+
+
+
+data Annotation = Cat Category | Qual Qualifier | Mod Modifier
+partition :: [Annotation] -> ([Category], [Qualifier], [Modifier])
+partition xs = ([y | Cat y <- xs], [y | Qual y <- xs], [y | Mod y <- xs])
+
+-- Second line
+secondLine :: GenParser Char st ([Category], [Qualifier], [Modifier])
+secondLine = partition <$> (annotation `manyTill` eol) where
+    annotation = try (Cat <$> parser)
+             <|> try (Qual <$> parser)
+             <|> (Mod <$> parser)
+             <?> "annotation (category|qualifier|prefix|suffix|trail)"
+
+
+-- Body
+fill :: GenParser Char st (Record -> Record)
+fill = try (addSec <$> section)
+   <|> try (addAttr <$> parser)
+   <|> try (addEvent <$> parser)
+   <|> try (addApp <$> parser) where
+    addSec   x r = r{units=x ++ units r}
+    addAttr  x r = r{attrs=x:attrs r}
+    addEvent x r = r{events=x:events r}
+    addApp   x r = r{appearances=x:appearances r}
