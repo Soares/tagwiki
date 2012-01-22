@@ -14,7 +14,7 @@ import qualified Text.TagWiki.Modifier as Modifier
 import qualified Text.TagWiki.Symbols as Y
 
 tag :: GenParser Char st String
-tag = (except restricted <* optional halt)
+tag = except restricted <* optional halt
 
 
 -- A reference to another file and/or event

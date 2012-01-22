@@ -10,24 +10,20 @@ import qualified Text.TagWiki.Symbols as Y
 
 
 data Unit = Str String
-          | Lnk (Reference, [Unit])
+          | Lnk Reference [Unit]
           | Dxp Calculation
           deriving Eq
 instance Show Unit where
     show (Str s) = show s
-    show (Lnk (ref, [])) = printf "|%s|" (show ref)
-    show (Lnk (ref, xs)) = printf "|%s, %s|" (show ref) (concatMap show xs)
+    show (Lnk ref []) = printf "|%s|" (show ref)
+    show (Lnk ref xs) = printf "|%s, %s|" (show ref) (concatMap show xs)
     show (Dxp c) = show c
 instance Parseable Unit where
-    parser = try (Lnk <$> link)
+    parser = try (oLink >> liftM2 Lnk parser (parser `manyTill` cLink))
          <|> try (Dxp <$> parser)
          <|> try (Str . return <$> escWhite)
          <|> (Str <$> except restricted)
          <?> "simple unit (link|date|text)"
-
-
-link :: GenParser Char st (Reference, [Unit])
-link = oLink >> liftM2 (,) parser (parser `manyTill` cLink)
 
 
 oLink, cLink :: GenParser Char st ()
