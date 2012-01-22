@@ -1,6 +1,6 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Text.Attribute ( Attribute(..) ) where
-import Control.Monad
+import Control.Applicative ( (<$>), (<*>) )
 import Data.String.Utils
 import Text.Fragment
 import Text.ParserCombinators.TagWiki
@@ -20,12 +20,12 @@ instance Show Attribute where
     show (Attr k v _) = printf "%s: %s" (show k) (show v)
 
 instance Parseable Attribute where
-    parser = at >> liftM3 Attr (except " \t\n") (many parser) block
+    parser = at >> Attr <$> except " \t\n" <*> many parser <*> block
         where at = marker Y.attribute
 
 instance Fragment [Attribute] where
-    resolve db xs = section "Attributes" $ concatMap (resolve db) xs
+    resolve xs = (section "Attributes" . concat) <$> mapM resolve xs
 
 instance Fragment Attribute where
-    resolve db (Attr k v t) = article name (resolve db t)
-        where name = printf "%s:  %s" (strip k) (resolve db v)
+    resolve (Attr k v t) = article <$> name <*> resolve t where
+        name = printf "%s: %s" (strip k) <$> resolve v

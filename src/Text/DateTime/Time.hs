@@ -1,6 +1,7 @@
-module Text.DateTime.Time where
+module Text.DateTime.Time ( Time ) where
 import Control.Applicative ( (<*) )
 import Data.Functor
+import Text.DateTime.Moment
 import Text.ParserCombinators.TagWiki
 import Text.Printf
 import Text.DateTime.Parser
@@ -13,6 +14,9 @@ data Time = Time { hour   :: Maybe Int
                  , detail :: Maybe Int
                  } deriving Eq
 
+instance Dateable Time where
+    date (Time h m s d) = return $ Known (dateParts ++ [h, m, s, d]) Nothing
+        where dateParts = [Nothing, Nothing, Nothing]
 
 instance Show Time where
     show (Time h m s d) = printf "%s:%s.%s.%s"

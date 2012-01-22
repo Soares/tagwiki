@@ -1,6 +1,6 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Text.Appearance ( Appearance(..) ) where
-import Control.Monad
+import Control.Applicative ( (<$>), (<*>) )
 import Text.Fragment
 import Text.ParserCombinators.TagWiki
 import Text.Reference
@@ -16,10 +16,10 @@ instance Show Appearance where
     show (App k _) = '@':show k
 
 instance Parseable Appearance where
-    parser = marker Y.appearance >> liftM2 App parser block
+    parser = marker Y.appearance >> App <$> parser <*> block
 
 instance Fragment [Appearance] where
-    resolve db xs = section "Appearances" $ concatMap (resolve db) xs
+    resolve xs = (section "Appearances" . concat) <$> mapM resolve xs
 
 instance Fragment Appearance where
-    resolve db (App r t) = article (resolve db r) (resolve db t)
+    resolve (App r t) = article <$> resolve r <*> resolve t

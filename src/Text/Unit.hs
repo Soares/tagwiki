@@ -1,6 +1,6 @@
-module Text.Unit ( Unit(..), section, block, restricted ) where
+module Text.Unit ( Unit(..), section, block ) where
+import Control.Applicative ( (<$>), (<*>) )
 import Control.Monad
-import Data.Functor
 import Text.DateTime.Calculation
 import Text.Fragment
 import Text.ParserCombinators.Parsec
@@ -23,26 +23,25 @@ instance Show Unit where
     show (Dxp c) = show c
 
 instance Parseable Unit where
-    parser = try (oLink >> liftM2 Lnk parser (parser `manyTill` cLink))
+    parser = try (oLink >> Lnk <$> parser <*> (parser `manyTill` cLink))
          <|> try (Dxp <$> parser)
          <|> try (Str . return <$> escWhite)
-         <|> (Str <$> except restricted)
+         <|> (Str <$> except Y.restrictedInRefs)
          <?> "simple unit (link|date|text)"
 
 instance Fragment Unit where
-    resolve _ (Str s) = s
-    resolve db (Lnk ref []) = link (display db ref) (resolve db ref)
-    resolve db (Lnk ref xs) = link (resolve db xs) (resolve db ref)
-    resolve db (Dxp c) = resolve db c
+    resolve (Str s) = return s
+    resolve (Lnk ref xs) = link <$> txt <*> src where
+        txt = if null xs then resolve ref else resolve xs
+        src = source ref >>= \s -> return $ case s of
+            Nothing -> "ERROR: NO SOURCE"
+            Just x -> x
+    resolve (Dxp c) = resolve c
 
 
 oLink, cLink :: GenParser Char st ()
 oLink = string Y.oLink >> return ()
 cLink = string Y.cLink >> return ()
-
-
-restricted :: String
-restricted = concat [Y.oLink, Y.oDate, "\n"]
 
 
 -- Block that doesn't care about whitespace

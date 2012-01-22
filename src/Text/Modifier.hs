@@ -1,47 +1,56 @@
 module Text.Modifier
     ( Modifier(..)
-    , prefixes
-    , suffixes
-    , trails
-    , separate
-    , restricted
+    , partition
+    , category
+    , qualifier
+    , prefix
+    , suffix
+    , trail
     ) where
-import Data.Functor
+import Control.Applicative ( (<$>) )
+import Data.String.Utils
 import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import qualified Text.Symbols as Y
 
--- Modifiers on tags
-data Modifier = Prefix String
-              | Suffix String
-              | Trail String
-              deriving Eq
-
-instance Show Modifier where
-    show (Prefix s) = '^':s
-    show (Suffix s) = '$':s
-    show (Trail s) = ',':s
+data Modifier = Cat String
+              | Qal String
+              | Pre String
+              | Suf String
+              | Trl String
+              deriving (Eq, Show)
 
 instance Parseable Modifier where
-    parser = try (Prefix <$> (carat >> except restricted))
-         <|> try (Suffix <$> (dollar >> except restricted))
-         <|> (Trail <$> (comma >> except restricted))
-         <?> "Modifier"
+    parser = try (Cat <$> category)
+         <|> try (Qal <$> qualifier)
+         <|> try (Pre <$> prefix)
+         <|> try (Suf <$> suffix)
+         <|> (Trl <$> trail)
+         <?> "any modifier"
 
--- Modifier partitioners
-prefixes, suffixes, trails :: [Modifier] -> [String]
-prefixes xs = [y | Prefix y <- xs]
-suffixes xs = [y | Suffix y <- xs]
-trails xs = [y | Trail y <- xs]
-separate :: [Modifier] -> ([String], [String], [String])
-separate xs = (prefixes xs, suffixes xs, trails xs)
+partition :: [Modifier] -> ([String], [String], [String], [String], [String])
+partition m = ( [c | Cat c <- m]
+              , [q | Qal q <- m]
+              , [p | Pre p <- m]
+              , [s | Pre s <- m]
+              , [t | Trl t <- m] )
 
--- Modifier operators
-comma, carat, dollar :: GenParser Char st ()
+restricted :: String
+restricted = Y.restrictedInRefs ++ Y.restrictedInMods
+
+category, qualifier, prefix, suffix, trail :: GenParser Char st String
+-- External to tags
+category = strip <$> (hash >> (except restricted))
+qualifier = strip <$> between oparen cparen (except restricted)
+-- Internal to tags
+prefix = strip <$> (carat >> (except Y.restrictedInMods))
+suffix = strip <$> (dollar >> (except Y.restrictedInMods))
+trail = strip <$> (comma >> (except Y.restrictedInMods))
+
+oparen, cparen, hash, comma, carat, dollar :: GenParser Char st ()
 comma = designator Y.comma
 carat = designator Y.prefix
 dollar = designator Y.suffix
-
-restricted :: String
-restricted = concat [Y.category, Y.prefix, Y.suffix, Y.trail
-                    , Y.oQualifier, Y.cQualifier, "\n"]
+hash = designator Y.category
+oparen = designator Y.oQualifier
+cparen = designator Y.cQualifier
