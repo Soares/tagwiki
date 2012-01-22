@@ -1,5 +1,6 @@
 module Text.DateTime.Calculation ( Calculation(..) ) where
 import Control.Monad
+import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Printf
@@ -14,6 +15,9 @@ instance Show Calculation where
 
 instance Parseable Calculation where
     parser = calculation
+
+instance Fragment Calculation where
+    resolve _ _ = "DATES CAN'T RESOLVE YET"
 
 -- Parsing
 obrace, cbrace, comma :: GenParser Char st ()

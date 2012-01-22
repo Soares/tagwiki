@@ -2,13 +2,15 @@ module Text.Reference
     ( Reference(..)
     , Category(..)
     , Qualifier(..)
+    , display
     , tag
     ) where
 import Control.Applicative ( (<*) )
 import Data.Either
 import Data.Functor
-import Text.ParserCombinators.TagWiki
+import Text.Fragment
 import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
 import Text.Printf
 import qualified Text.Modifier as Modifier
 import qualified Text.Symbols as Y
@@ -23,9 +25,11 @@ data Reference = Ref { text       :: String
                      , qualifiers :: [Qualifier]
                      , events     :: [Event]
                      } deriving Eq
+
 instance Show Reference where
     show (Ref t cs qs es) = printf "%s%s%s%s" (show t)
         (concatMap show cs) (concatMap show qs) (concatMap show es)
+
 instance Parseable Reference where
     parser = do
         txt <- tag
@@ -33,6 +37,12 @@ instance Parseable Reference where
         evs <- many parser
         optional (designator Y.halt)
         return $ Ref txt cats quals evs
+
+instance Fragment Reference where
+    resolve _ _ = "LINKS DON'T WORK YET"
+
+display :: a -> Reference -> String
+display _ _ = "LINKS CANT BE DISPLAYED YET"
 
 
 data Category = Cat String deriving Eq

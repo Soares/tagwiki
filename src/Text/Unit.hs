@@ -1,11 +1,13 @@
 module Text.Unit ( Unit(..), section, block, restricted ) where
 import Control.Monad
 import Data.Functor
-import Text.ParserCombinators.TagWiki
-import Text.ParserCombinators.Parsec
-import Text.Printf
 import Text.DateTime.Calculation
+import Text.Fragment
+import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
+import Text.Printf
 import Text.Reference
+import Text.Render ( link )
 import qualified Text.Symbols as Y
 
 
@@ -13,17 +15,25 @@ data Unit = Str String
           | Lnk Reference [Unit]
           | Dxp Calculation
           deriving Eq
+
 instance Show Unit where
     show (Str s) = show s
     show (Lnk ref []) = printf "|%s|" (show ref)
     show (Lnk ref xs) = printf "|%s, %s|" (show ref) (concatMap show xs)
     show (Dxp c) = show c
+
 instance Parseable Unit where
     parser = try (oLink >> liftM2 Lnk parser (parser `manyTill` cLink))
          <|> try (Dxp <$> parser)
          <|> try (Str . return <$> escWhite)
          <|> (Str <$> except restricted)
          <?> "simple unit (link|date|text)"
+
+instance Fragment Unit where
+    resolve _ (Str s) = s
+    resolve db (Lnk ref []) = link (display db ref) (resolve db ref)
+    resolve db (Lnk ref xs) = link (resolve db xs) (resolve db ref)
+    resolve db (Dxp c) = resolve db c
 
 
 oLink, cLink :: GenParser Char st ()
