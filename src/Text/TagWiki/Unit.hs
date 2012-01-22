@@ -21,7 +21,7 @@ instance Show Unit where
 instance Parseable Unit where
     parser = try (Lnk <$> link)
          <|> try (Dxp <$> parser)
-         <|> (Str . return <$> escWhite)
+         <|> try (Str . return <$> escWhite)
          <|> (Str <$> except restricted)
          <?> "simple unit (link|date|text)"
 

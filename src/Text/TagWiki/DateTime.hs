@@ -22,7 +22,7 @@ cbrace = anyWhite >> char '}' >> return ()
 comma = operator Y.comma
 
 calculation, exact, range :: GenParser Char st Calculation
-calculation = try exact <|> try range <?> "date calculation"
+calculation = try exact <|> range <?> "date calculation"
 exact = between obrace cbrace (fmap Exactly parser)
 range = between obrace cbrace (liftM2 Range parser endExpr)
     where endExpr = comma >> whitespace >> option Present parser

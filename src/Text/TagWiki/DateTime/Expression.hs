@@ -53,7 +53,7 @@ cparen = operator Y.cParen
 operations :: GenParser Char st Expression
 operations = term `chainl1` addsub where
     addsub = try (plus >> return Plus)
-         <|> try (minus >> return Minus)
+         <|> (minus >> return Minus)
          <?> "+/- date expression"
 
 -- 'simple' terms

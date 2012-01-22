@@ -8,8 +8,7 @@ import Text.TagWiki.Appearance
 import Text.TagWiki.Attribute
 import Text.TagWiki.Event
 import Text.TagWiki.Modifier
-import Text.TagWiki.Reference ( Category, Qualifier )
-import Text.TagWiki.Tag ( tag )
+import Text.TagWiki.Reference ( tag, Category, Qualifier )
 import Text.TagWiki.Unit
 import qualified Text.TagWiki.Symbols as Y
 
@@ -21,7 +20,7 @@ instance Parseable Name where
     parser = whitespace >> liftM2 Name priority str where
         priority = option False (pri >> return True)
         escPri = hack >> pri
-        str = liftM2 (++) (option "" escPri) (tag <$> parser)
+        str = liftM2 (++) (option "" escPri) tag
         pri = string Y.priority
 
 -- A whole file
@@ -50,11 +49,11 @@ firstLine = (parser `sepBy` designator Y.comma) <* eol
 
 
 
+-- Second line
 data Annotation = Cat Category | Qual Qualifier | Mod Modifier
 partition :: [Annotation] -> ([Category], [Qualifier], [Modifier])
 partition xs = ([y | Cat y <- xs], [y | Qual y <- xs], [y | Mod y <- xs])
 
--- Second line
 secondLine :: GenParser Char st ([Category], [Qualifier], [Modifier])
 secondLine = partition <$> (annotation `manyTill` eol) where
     annotation = try (Cat <$> parser)
@@ -68,7 +67,7 @@ fill :: GenParser Char st (Record -> Record)
 fill = try (addSec <$> section)
    <|> try (addAttr <$> parser)
    <|> try (addEvent <$> parser)
-   <|> try (addApp <$> parser) where
+   <|> (addApp <$> parser) where
     addSec   x r = r{units=x ++ units r}
     addAttr  x r = r{attrs=x:attrs r}
     addEvent x r = r{events=x:events r}
