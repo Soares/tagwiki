@@ -1,4 +1,4 @@
-module Text.TagWiki.Reference
+module Text.Reference
     ( Reference(..)
     , Category(..)
     , Qualifier(..)
@@ -7,11 +7,11 @@ module Text.TagWiki.Reference
 import Control.Applicative ( (<*) )
 import Data.Either
 import Data.Functor
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
-import qualified Text.TagWiki.Modifier as Modifier
-import qualified Text.TagWiki.Symbols as Y
+import qualified Text.Modifier as Modifier
+import qualified Text.Symbols as Y
 
 tag :: GenParser Char st String
 tag = except restricted <* optional halt

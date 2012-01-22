@@ -1,10 +1,10 @@
-module Text.TagWiki.DateTime.Time where
+module Text.DateTime.Time where
 import Control.Applicative ( (<*) )
 import Data.Functor
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.Printf
-import Text.TagWiki.DateTime.Parser
-import Text.Utils
+import Text.DateTime.Parser
+import Text.DateTime.Utils
 
 
 data Time = Time { hour   :: Maybe Int

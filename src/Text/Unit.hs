@@ -1,12 +1,12 @@
-module Text.TagWiki.Unit ( Unit(..), section, block, restricted ) where
+module Text.Unit ( Unit(..), section, block, restricted ) where
 import Control.Monad
 import Data.Functor
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
-import Text.TagWiki.DateTime
-import Text.TagWiki.Reference
-import qualified Text.TagWiki.Symbols as Y
+import Text.DateTime.Calculation
+import Text.Reference
+import qualified Text.Symbols as Y
 
 
 data Unit = Str String
@@ -35,11 +35,10 @@ restricted :: String
 restricted = concat [Y.oLink, Y.oDate, "\n"]
 
 
--- Parsing unit chunks
-
 -- Block that doesn't care about whitespace
 section :: GenParser Char st [Unit]
 section = try (return . Str <$> many1 newline) <|> boringLine
+
 
 -- The rest of the current line + all indented lines below
 block :: GenParser Char st [Unit]
@@ -50,16 +49,19 @@ block = do
         chunk <- many $ try $ blockWithWhite white
         return $ clear ++ concat chunk
 
--- All the indented lines below
+
+-- All indented lines below
 blockWithWhite :: String -> GenParser Char st [Unit]
 blockWithWhite w = return . Str <$> many1 newline <|> lineWithWhite w
+
 
 -- Lines with just the right amount of white
 lineWithWhite :: String -> GenParser Char st [Unit]
 lineWithWhite "" = boringLine
 lineWithWhite (w:ws) = (char w >> lineWithWhite ws) <?> "moar whitespace!"
 
--- Lines that aren't keys, events, or appearances
+
+-- Lines that aren't attributes, events, or appearances
 boringLine :: GenParser Char st [Unit]
 boringLine = (do
     notFollowedBy (designator Y.event)

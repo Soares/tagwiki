@@ -1,10 +1,10 @@
-module Text.TagWiki.DateTime.AbsDate where
+module Text.DateTime.AbsDate where
 import Data.Functor
-import Text.TagWiki.DateTime.Parser
-import Text.TagWiki.DateTime.Year
-import Text.Parser
+import Text.DateTime.Parser
+import Text.DateTime.Year
+import Text.ParserCombinators.TagWiki
 import Text.Printf
-import Text.Utils
+import Text.DateTime.Utils
 
 data AbsDate = AbsDate { year  :: Year
                        , month :: Maybe Int

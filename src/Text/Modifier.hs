@@ -1,4 +1,4 @@
-module Text.TagWiki.Modifier
+module Text.Modifier
     ( Modifier(..)
     , prefixes
     , suffixes
@@ -7,9 +7,9 @@ module Text.TagWiki.Modifier
     , restricted
     ) where
 import Data.Functor
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
-import qualified Text.TagWiki.Symbols as Y
+import qualified Text.Symbols as Y
 
 -- Modifiers on tags
 data Modifier = Prefix String

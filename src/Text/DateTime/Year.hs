@@ -1,7 +1,7 @@
-module Text.TagWiki.DateTime.Year where
+module Text.DateTime.Year where
 import Control.Monad
 import Data.Functor
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
 

@@ -1,7 +1,7 @@
-module Text.TagWiki.DateTime.Parser where
-import Text.Parser
+module Text.DateTime.Parser where
+import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
-import qualified Text.TagWiki.Symbols as Y
+import qualified Text.Symbols as Y
 
 slash, colin, dot :: GenParser Char st ()
 slash = operator Y.dateSep

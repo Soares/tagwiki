@@ -1,4 +1,4 @@
-module Text.Parser where
+module Text.ParserCombinators.TagWiki where
 import Control.Applicative ( (<*) )
 import Data.Functor
 import Data.List
@@ -33,7 +33,7 @@ whitespace = many $ oneOf " \t"
 anyWhite :: GenParser Char st String
 anyWhite = many $ oneOf " \t\n"
 
--- EOL or EOF
+-- newline or EOF
 eol :: GenParser Char st String
 eol = try (return <$> newline) <|> (eof >> return "")
 
@@ -72,14 +72,14 @@ except = many1 . escaping
 floating :: GenParser Char st a -> GenParser Char st a
 floating p = anyWhite >> p <* anyWhite
 
--- A whitespace-wrapped no-op action
+-- An multiline operator
 operator :: String -> GenParser Char st ()
 operator c = anyWhite >> string c >> anyWhite >> return ()
 
--- A whitespace-prefixed one-line no-op action
+-- A symbol with optional whitespace preciding it
 designator :: String -> GenParser Char st ()
 designator c = whitespace >> string c >> return ()
 
--- A whitespace-wrapped one-line no-op action
+-- A symbol with optional whitespace before and after (no newlines)
 marker :: String -> GenParser Char st ()
 marker c = whitespace >> string c >> whitespace >> return ()

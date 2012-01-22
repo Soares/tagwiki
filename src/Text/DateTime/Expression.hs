@@ -1,13 +1,13 @@
-module Text.TagWiki.DateTime.Expression ( Expression(..) ) where
+module Text.DateTime.Expression ( Expression(..) ) where
 import Data.Functor
-import Text.TagWiki.Reference
+import Text.Reference
 import Text.ParserCombinators.Parsec
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.Printf
-import Text.TagWiki.DateTime.AbsDate
-import Text.TagWiki.DateTime.RelDate
-import Text.TagWiki.DateTime.Time
-import qualified Text.TagWiki.Symbols as Y
+import Text.DateTime.AbsDate
+import Text.DateTime.RelDate
+import Text.DateTime.Time
+import qualified Text.Symbols as Y
 
 
 

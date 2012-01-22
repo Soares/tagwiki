@@ -1,10 +1,10 @@
-module Text.TagWiki.Attribute ( Attribute(..) ) where
+module Text.Attribute ( Attribute(..) ) where
 import Control.Monad
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
-import Text.TagWiki.Unit
-import qualified Text.TagWiki.Symbols as Y
+import Text.Unit
+import qualified Text.Symbols as Y
 
 -- A key: value pair with an optional attribute block below
 data Attribute = Attribute { attrRef   :: String

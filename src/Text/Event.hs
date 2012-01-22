@@ -1,14 +1,14 @@
-module Text.TagWiki.Event ( Event(..) ) where
+module Text.Event ( Event(..) ) where
 import Control.Monad
 import Data.Functor
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
-import Text.TagWiki.DateTime
-import Text.TagWiki.DateTime.Expression
-import Text.TagWiki.Reference ( tag )
-import Text.TagWiki.Unit
-import qualified Text.TagWiki.Symbols as Y
+import Text.DateTime.Calculation
+import Text.DateTime.Expression
+import Text.Reference ( tag )
+import Text.Unit
+import qualified Text.Symbols as Y
 
 data Event = Event { name :: String
                    , when :: Calculation

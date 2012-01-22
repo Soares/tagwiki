@@ -1,4 +1,4 @@
-module Text.TagWiki.Symbols where
+module Text.Symbols where
 
 event, category, appearance, attribute, halt :: String
 event = "!"

@@ -1,10 +1,10 @@
-module Text.TagWiki.Appearance ( Appearance(..) ) where
+module Text.Appearance ( Appearance(..) ) where
 import Control.Monad
-import Text.Parser
+import Text.ParserCombinators.TagWiki
 import Text.Printf
-import Text.TagWiki.Reference
-import Text.TagWiki.Unit
-import qualified Text.TagWiki.Symbols as Y
+import Text.Reference
+import Text.Unit
+import qualified Text.Symbols as Y
 
 data Appearance = Appearance { appRef  :: Reference
                              , appText :: [Unit]

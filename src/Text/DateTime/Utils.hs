@@ -1,4 +1,4 @@
-module Text.Utils where
+module Text.DateTime.Utils where
 import Data.Maybe
 
 intOrBlank :: Maybe Int -> String
