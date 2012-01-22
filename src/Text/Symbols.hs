@@ -46,6 +46,6 @@ restrictedInText, restrictedInRefs, restrictedInMods :: String
 restrictedInText = concat [oLink, oDate, "\n"]
 restrictedInMods = concat
     [category, prefix, suffix, trail, oQualifier, cQualifier, "\n"]
-restrictedInRefs = concat $
+restrictedInRefs = concat
     [ oLink, cLink, halt, oQualifier, cQualifier, event, category
     , oDate, cDate, dateRangeSep, addDate, subDate, startDate, "\n"]

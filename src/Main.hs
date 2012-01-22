@@ -5,7 +5,7 @@ import System.FilePath
 import System.Exit
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
-import Text.Record
+import Control.Record
 
 src :: String
 src = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/src"

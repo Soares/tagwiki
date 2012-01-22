@@ -2,7 +2,7 @@ module Text.Fragment where
 import Control.Dangerous
 import Control.Monad.Reader
 import Data.Functor
-import {-# SOURCE #-} Database
+import {-# SOURCE #-} Data.Directory
 
 class Fragment a where
     resolve :: a -> Operation String
