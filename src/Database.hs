@@ -1,9 +1,12 @@
 module Database where
 import Control.Monad.Reader
+import Control.Dangerous
 import File
 import Text.DateTime.Offset
 
 data Database = Database
+
+type Operation = DangerousT (Reader Database)
 
 era :: String -> Reader Database [Offset]
 era _ = return []

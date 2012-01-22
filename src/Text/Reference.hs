@@ -5,12 +5,16 @@ module Text.Reference
     ) where
 import Control.Applicative ( (<*), (<$>) )
 import Control.Monad.Reader
+import Control.Dangerous hiding ( Warning )
 import Data.Either
 import Data.List hiding ( find )
 import Database ( Database )
 import qualified Database
-import File
+import File ( File )
+import qualified File
 import Text.DateTime.Moment
+import {-# SOURCE #-} Text.Event ( Event )
+import {-# SOURCE #-} qualified Text.Event as Event
 import Text.Fragment
 import Text.Modifier ( category, qualifier )
 import Text.ParserCombinators.Parsec
@@ -29,32 +33,31 @@ data Reference = Ref { text       :: String
 
 
 -- Resolution to file
+data Warning = CantFind Reference
+instance Show Warning where
+    show (CantFind ref) = printf "File not found: %s" (show ref)
+
 locate :: Reference -> Reader Database (Maybe File)
 locate ref = Database.file (categories ref) (qualifiers ref) (text ref)
 
+operate :: Reference -> a -> (File -> DangerousT (Reader Database) a)
+    -> DangerousT (Reader Database) a
+operate ref no fn = lift (asks locate ref) >>= \result -> case result of
+    Nothing -> (warn $ CantFind ref) >> return no
+    Just file -> fn file
+
 -- Resolution to date
 instance Dateable Reference where
-    date ref = do
-        file <- asks locate ref
-        let event = (flip pinpoint $ events ref) =<< file
-        case event of
-            Nothing -> return $ Unknown $ printf
-                "Could not pinpoint %s in %s"
-                (intercalate "!" (events ref))
-                (show file)
-            Just ev -> date ev
+    date ref = operate ref unknown (File.pinpoint $ events ref)
+        where unknown = Unknown $ printf "Can't pinpoint %s" (show ref)
         
 -- Resolution to string
 instance Fragment Reference where
-    resolve ref = asks locate ref >>= \file -> return $ case file of
-        Nothing -> printf "ERROR: %s not found" (show ref)
-        Just f -> show f
+    resolve ref = operate ref "" (return . show)
 
 -- Source file lookup
-source :: Reference -> Reader Database (Maybe String)
-source ref = asks locate ref >>= \file -> return $ case file of
-    Nothing -> Nothing
-    Just f -> Just $ reference f (events ref)
+-- source :: Reference -> Reader Database (Maybe String)
+source ref = operate ref "" (return . (File.reference $ events ref))
 
 
 -- Parsing

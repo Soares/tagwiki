@@ -41,7 +41,11 @@ instance Dateable Expression where
     date (Plus x y) = aapply Moment.plus (date x) (date y)
     date (Minus x y) = aapply Moment.minus (date x) (date y)
     date Unknown = return $ Moment.Unknown ""
-    date (Clobber left right) = clobber <$> date left <*> date right
+    date (Clobber left right) = do
+        x <- date left
+        y <- date right
+        let z = clobber x y
+        return z
     date (From ref) = date ref
     date (Abs d) = date d
     date (Rel d) = date d
@@ -68,9 +72,9 @@ instance Parseable Expression2 where
          <|> (whitespace >> return Present)
          <?> "second date in range"
 
-instance Dateable (Moment, Expression2) where
-    date (left, More right) = Moment.plus left =<< date right
-    date (left, Less right) = Moment.minus left =<< date right
+instance Dateable (Expression, Expression2) where
+    date (x, More y) = aapply Moment.plus (date x) (date y)
+    date (x, Less y) = aapply Moment.minus (date x) (date y)
     date (_, Simply x) = date x
     date (_, Present) = return present
 

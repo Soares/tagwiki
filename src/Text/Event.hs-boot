@@ -1,5 +1,7 @@
-module Text.Event ( Event ) where
+module Text.Event ( Event, pinpoint ) where
 import Text.DateTime.Moment
+import {-# SOURCE #-} Database
 
 data Event
-instance Dateable Event
+
+pinpoint :: [String] -> Event -> Operation Moment

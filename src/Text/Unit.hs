@@ -1,6 +1,7 @@
 module Text.Unit ( Unit(..), section, block ) where
 import Control.Applicative ( (<$>), (<*>) )
 import Control.Monad
+import Control.Monad.Trans
 import Text.DateTime.Calculation
 import Text.Fragment
 import Text.ParserCombinators.Parsec
@@ -31,11 +32,9 @@ instance Parseable Unit where
 
 instance Fragment Unit where
     resolve (Str s) = return s
-    resolve (Lnk ref xs) = link <$> txt <*> src where
+    resolve (Lnk ref xs) = link <$> src <*> txt where
         txt = if null xs then resolve ref else resolve xs
-        src = source ref >>= \s -> return $ case s of
-            Nothing -> "ERROR: NO SOURCE"
-            Just x -> x
+        src = source ref
     resolve (Dxp c) = resolve c
 
 
