@@ -3,9 +3,8 @@ import Data.Functor
 import System.Directory
 import System.FilePath
 import System.Exit
-import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.TagWiki
-import Control.Record
+import Data.Head
+import Data.Body
 
 src :: String
 src = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/src"
@@ -19,7 +18,4 @@ main = do
 load :: FilePath -> IO ()
 load fp = do
     txt <- readFile (src </> fp)
-    let result = parse (parser :: GenParser Char st Record) fp txt
-    case result of
-        Left err -> print err >> exitFailure
-        Right _ -> putStr "."
+    exitFailure

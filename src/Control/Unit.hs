@@ -1,7 +1,6 @@
 module Control.Unit ( Unit(..), section, block ) where
 import Control.Applicative ( (<$>), (<*>) )
 import Control.Monad
-import Control.Monad.Trans
 import Control.DateTime.Calculation
 import Text.Fragment
 import Text.ParserCombinators.Parsec

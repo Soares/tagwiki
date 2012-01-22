@@ -13,8 +13,6 @@ import qualified Data.Directory as Directory
 import Data.File ( File )
 import qualified Data.File as File
 import Control.DateTime.Moment
-import {-# SOURCE #-} Control.Event ( Event )
-import {-# SOURCE #-} qualified Control.Event as Event
 import Text.Fragment
 import Control.Modifier ( category, qualifier )
 import Text.ParserCombinators.Parsec
@@ -41,7 +39,7 @@ locate :: Reference -> Reader Directory (Maybe File)
 locate ref = Directory.file (categories ref) (qualifiers ref) (text ref)
 
 operate :: Reference -> a -> (File -> Operation a) -> Operation a
-operate ref no fn = lift (asks locate ref) >>= \result -> case result of
+operate ref no fn = lift (asks locate ref) >>= \r -> case r of
     Nothing -> warn (CantFind ref) >> return no
     Just file -> fn file
 
@@ -52,10 +50,10 @@ instance Dateable Reference where
         
 -- Resolution to string
 instance Fragment Reference where
-    resolve ref = operate ref "" (return . show)
+    resolve ref = operate ref "" (return . File.title)
 
 -- Source file lookup
--- source :: Reference -> Reader Directory (Maybe String)
+source :: Reference -> Operation String
 source ref = operate ref "" $ return . File.reference (events ref)
 
 

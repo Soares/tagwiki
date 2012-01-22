@@ -1,6 +1,4 @@
 module Text.Fragment where
-import Control.Dangerous
-import Control.Monad.Reader
 import Data.Functor
 import {-# SOURCE #-} Data.Directory
 

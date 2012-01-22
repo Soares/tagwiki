@@ -1,6 +1,6 @@
 module Control.DateTime.Calculation ( Calculation(..), beginning, ending ) where
 import Control.Applicative ( (<$>), (<*>) )
-import {-# SOURCE #-} Data.Directory
+import Data.Directory
 import Text.Fragment
 import Control.DateTime.Moment
 import Text.ParserCombinators.Parsec

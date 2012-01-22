@@ -7,7 +7,6 @@ module Control.DateTime.Moment
     , invert
     , clobber
     ) where
-import Control.Dangerous
 import Control.Monad
 import Control.Monad.Reader
 import Data.Maybe
