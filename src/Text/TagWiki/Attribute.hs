@@ -1,10 +1,10 @@
-module Body.Attribute ( Attribute(..) ) where
-import Body.Unit
+module Text.TagWiki.Attribute ( Attribute(..) ) where
 import Control.Monad
-import Parsing
+import Text.Parser
 import Text.ParserCombinators.Parsec
 import Text.Printf
-import qualified Symbols as Y
+import Text.TagWiki.Unit
+import qualified Text.TagWiki.Symbols as Y
 
 -- A key: value pair with an optional attribute block below
 data Attribute = Attribute { attrRef   :: String
@@ -17,5 +17,5 @@ instance Show Attribute where
         (if null xs then "" else "...")
 
 instance Parseable Attribute where
-    parser = (marker Y.attribute) >> liftM3 Attribute key (many parser) block
+    parser = marker Y.attribute >> liftM3 Attribute key (many parser) block
         where key = except " \t\n"

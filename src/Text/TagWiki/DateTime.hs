@@ -1,10 +1,10 @@
-module DateTime ( Calculation(..) ) where
-import DateTime.Expression
+module Text.TagWiki.DateTime ( Calculation(..) ) where
 import Control.Monad
-import Parsing
-import qualified Symbols as Y
 import Text.ParserCombinators.Parsec
+import Text.Parser
 import Text.Printf
+import Text.TagWiki.DateTime.Expression
+import qualified Text.TagWiki.Symbols as Y
 
 data Calculation = Exactly Expression | Range Expression Expression deriving Eq
 

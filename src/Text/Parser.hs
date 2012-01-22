@@ -1,4 +1,4 @@
-module Parsing where
+module Text.Parser where
 import Control.Applicative ( (<*) )
 import Data.Functor
 import Data.List

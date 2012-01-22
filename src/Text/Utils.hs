@@ -1,4 +1,4 @@
-module Utils where
+module Text.Utils where
 import Data.Maybe
 
 intOrBlank :: Maybe Int -> String

@@ -1,13 +1,13 @@
-module DateTime.Expression ( Expression(..) ) where
+module Text.TagWiki.DateTime.Expression ( Expression(..) ) where
 import Data.Functor
-import DateTime.AbsDate
-import DateTime.RelDate
-import DateTime.Time
-import Parsing
-import Reference
-import qualified Symbols as Y
+import Text.TagWiki.Reference
 import Text.ParserCombinators.Parsec
+import Text.Parser
 import Text.Printf
+import Text.TagWiki.DateTime.AbsDate
+import Text.TagWiki.DateTime.RelDate
+import Text.TagWiki.DateTime.Time
+import qualified Text.TagWiki.Symbols as Y
 
 
 
@@ -59,12 +59,12 @@ operations = term `chainl1` addsub where
 -- 'simple' terms
 term :: GenParser Char st Expression
 term = try (between oparen cparen parser)
-        <|> try (More <$> (plus >> parser))
-        <|> try (Less <$> (minus >> parser))
-        <|> try (questionMark >> return Unknown)
-        <|> try (Abs <$> (floating parser))
-        <|> try (Rel <$> (floating parser))
-        <|> try (At  <$> (floating parser))
-        <|> try (Rel . fromYear <$> (floating number))
-        <|> try (From <$> (floating parser))
-        <?> "simple date expression"
+   <|> try (More <$> (plus >> parser))
+   <|> try (Less <$> (minus >> parser))
+   <|> try (questionMark >> return Unknown)
+   <|> try (Abs <$> floating parser)
+   <|> try (Rel <$> floating parser)
+   <|> try (At  <$> floating parser)
+   <|> try (Rel . fromYear <$> floating number)
+   <|> try (From <$> floating parser)
+   <?> "simple date expression"

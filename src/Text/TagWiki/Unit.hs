@@ -1,12 +1,12 @@
-module Body.Unit ( Unit(..), section, block, restricted ) where
+module Text.TagWiki.Unit ( Unit(..), section, block, restricted ) where
 import Control.Monad
 import Data.Functor
-import Parsing
-import DateTime
-import Reference
-import qualified Symbols as Y
+import Text.Parser
 import Text.ParserCombinators.Parsec
 import Text.Printf
+import Text.TagWiki.DateTime
+import Text.TagWiki.Reference
+import qualified Text.TagWiki.Symbols as Y
 
 
 data Unit = Str String
@@ -21,16 +21,13 @@ instance Show Unit where
 instance Parseable Unit where
     parser = try (Lnk <$> link)
          <|> try (Dxp <$> parser)
-         <|> (Str <$> text)
+         <|> (Str . return <$> escWhite)
+         <|> (Str <$> except restricted)
          <?> "simple unit (link|date|text)"
 
 
 link :: GenParser Char st (Reference, [Unit])
 link = oLink >> liftM2 (,) parser (parser `manyTill` cLink)
-
-
-text :: GenParser Char st String
-text = many1 $ try escWhite <|> escaping restricted
 
 
 oLink, cLink :: GenParser Char st ()
@@ -55,7 +52,7 @@ block = do
     white <- lookAhead whitespace
     if null white then return clear else do
         chunk <- many $ try $ blockWithWhite white
-        return $ clear ++ (concat chunk)
+        return $ clear ++ concat chunk
 
 -- All the indented lines below
 blockWithWhite :: String -> GenParser Char st [Unit]

@@ -1,17 +1,17 @@
-module Record where
-import Body.Event
-import Body.Attribute
-import Body.Appearance
-import Body.Unit
+module Text.TagWiki.Record where
 import Control.Applicative ( (<*) )
 import Control.Monad
 import Data.Functor
-import Modifier
-import Parsing
-import Reference ( Category, Qualifier )
-import qualified Symbols as Y
-import Tag ( tag )
+import Text.Parser
 import Text.ParserCombinators.Parsec
+import Text.TagWiki.Appearance
+import Text.TagWiki.Attribute
+import Text.TagWiki.Event
+import Text.TagWiki.Modifier
+import Text.TagWiki.Reference ( Category, Qualifier )
+import Text.TagWiki.Tag ( tag )
+import Text.TagWiki.Unit
+import qualified Text.TagWiki.Symbols as Y
 
 -- Unit data types
 data FileType = Character | Place | Note deriving (Eq, Read, Show)
@@ -20,7 +20,7 @@ data Name = Name Bool String deriving (Eq, Ord, Read, Show)
 instance Parseable Name where
     parser = whitespace >> liftM2 Name priority str where
         priority = option False (pri >> return True)
-        escPri = (hack >> pri)
+        escPri = hack >> pri
         str = liftM2 (++) (option "" escPri) (tag <$> parser)
         pri = string Y.priority
 
@@ -46,7 +46,7 @@ instance Parseable Record where
 
 -- First line
 firstLine :: GenParser Char st [Name]
-firstLine = (parser `sepBy` (designator Y.comma)) <* eol
+firstLine = (parser `sepBy` designator Y.comma) <* eol
 
 
 

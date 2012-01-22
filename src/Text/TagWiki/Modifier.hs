@@ -1,4 +1,4 @@
-module Modifier
+module Text.TagWiki.Modifier
     ( Modifier(..)
     , prefixes
     , suffixes
@@ -7,9 +7,9 @@ module Modifier
     , restricted
     ) where
 import Data.Functor
-import Parsing
+import Text.Parser
 import Text.ParserCombinators.Parsec
-import qualified Symbols as Y
+import qualified Text.TagWiki.Symbols as Y
 
 -- Modifiers on tags
 data Modifier = Prefix String
@@ -18,15 +18,15 @@ data Modifier = Prefix String
               deriving Eq
 
 instance Show Modifier where
-    show (Prefix s) = "^" ++ s
-    show (Suffix s) = "$" ++ s
-    show (Trail s) = "," ++ s
+    show (Prefix s) = '^':s
+    show (Suffix s) = '$':s
+    show (Trail s) = ',':s
 
 instance Parseable Modifier where
-    parser = try (Prefix <$> (carat >> (except restricted)))
-        <|> try (Suffix <$> (dollar >> (except restricted)))
-        <|> (Trail <$> (comma >> (except restricted)))
-        <?> "Modifier"
+    parser = try (Prefix <$> (carat >> except restricted))
+         <|> try (Suffix <$> (dollar >> except restricted))
+         <|> (Trail <$> (comma >> except restricted))
+         <?> "Modifier"
 
 -- Modifier partitioners
 prefixes, suffixes, trails :: [Modifier] -> [String]

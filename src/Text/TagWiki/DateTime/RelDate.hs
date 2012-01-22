@@ -1,10 +1,10 @@
-module DateTime.RelDate where
+module Text.TagWiki.DateTime.RelDate where
 import Control.Applicative ( (<*) )
 import Data.Functor
-import DateTime.Parsing
+import Text.Parser
 import Text.Printf
-import Parsing
-import Utils
+import Text.TagWiki.DateTime.Parser
+import Text.Utils
 
 data RelDate = RelDate { year  :: Maybe Int
                        , month :: Maybe Int
