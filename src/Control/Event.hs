@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.Event
     ( Event(..)
+    , recognizes
     , pinpoint
     , isStartEvent
     , isEndEvent
@@ -21,6 +22,7 @@ import Text.ParserCombinators.TagWiki
 import Text.Printf
 import Control.Reference ( tag )
 import Text.Render
+import Text.Utils
 import Control.Unit ( Unit, block )
 import qualified Text.Symbols as Y
 
@@ -28,6 +30,9 @@ data Event = Event { name :: String
                    , date :: Calculation
                    , text :: [Unit]
                    } deriving Eq
+
+recognizes :: String -> Event -> Bool
+recognizes txt e = normalize txt == normalize (name e)
 
 -- Reducing to moment
 pinpoint :: [String] -> Event -> Operation Moment

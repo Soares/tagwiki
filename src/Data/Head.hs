@@ -45,7 +45,7 @@ secondLine = parser `manyTill` eol
 
 -- Showing
 instance Show Head where
-    show (Head ns cs qs ps ss ts) = printf "%s %s%s%s%s%s"
+    show (Head ns cs qs ps ss ts) = printf "%s%s%s%s%s%s"
         (intercalate "," (map showTag ns))
         (if null ps then "" else '^':intercalate "^" ps)
         (if null ss then "" else '$':intercalate "$" ss)

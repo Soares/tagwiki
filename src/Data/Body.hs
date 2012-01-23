@@ -2,8 +2,10 @@ module Data.Body where
 import Control.Appearance ( Appearance )
 import Control.Applicative ( (<$>) )
 import Control.Attribute ( Attribute )
-import Control.Event ( Event )
+import Control.DateTime.Moment
+import Control.Event ( Event, recognizes, pinpoint )
 import Control.Unit ( section, Unit )
+import {-# SOURCE #-} Data.Directory ( Operation )
 import Data.List ( intercalate )
 import qualified Text.Render as Render
 import Text.Fragment
@@ -26,8 +28,19 @@ instance Fragment Body where
         atts = (Render.section "Attributes" . join) <$> mapM resolve at
         evts = (Render.section "Events" . join) <$> mapM resolve ev
         aps = (Render.section "Appearances" . join) <$> mapM resolve ap
-        unts = resolve un
+        unts = (Render.section "Notes" . concat) <$> mapM resolve un
 
+
+-- Resolution to date
+moment :: [String] -> Body -> Operation Moment
+moment [] _ = return unknown
+moment (e:es) b = firstOr unknown <$> candidates where
+    filtered = filter (recognizes e) (events b)
+    candidates = mapM (pinpoint es) filtered
+    firstOr x [] = x
+    firstOr _ (x:_) = x
+unknown :: Moment
+unknown = Unknown "no events defined"
 
 
 -- Parsing

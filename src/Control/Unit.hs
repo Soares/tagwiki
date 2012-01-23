@@ -27,7 +27,7 @@ instance Parseable Unit where
     parser = try (oLink >> Lnk <$> parser <*> (parser `manyTill` cLink))
          <|> try (Dxp <$> parser)
          <|> try (Str . return <$> escWhite)
-         <|> (Str <$> except Y.restrictedInRefs)
+         <|> (Str <$> except Y.restrictedInText)
          <?> "simple unit (link|date|text)"
 
 instance Fragment Unit where
