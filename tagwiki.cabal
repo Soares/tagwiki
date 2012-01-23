@@ -15,6 +15,10 @@ Executable tagwiki
     base >= 4 && < 5,
     parsec >= 3.1.1,
     filepath >= 1.2.0,
+    regex-compat >= 0.9.5,
+    containers >= 0.4,
+    MissingH >= 1.1.1,
+    mtl >= 2.0,
     directory >= 1.1.0,
     Dangerous >= 0.2.2
   Hs-Source-Dirs:   src

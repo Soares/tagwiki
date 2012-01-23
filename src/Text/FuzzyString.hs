@@ -2,10 +2,8 @@ module Text.FuzzyString ( FuzzyString, key, fromRef ) where
 import Control.Reference ( Reference(Ref) )
 import Data.Set ( Set )
 import Data.List ( sort )
-import Debug.Trace ( trace )
 import qualified Data.Set as Set
 import Text.Utils ( normalize )
-import Text.Printf
 
 data FuzzyString = Fuz { name       :: String
                        , categories :: Set String
@@ -31,18 +29,12 @@ instance Eq FuzzyString where
         qs = qualifiers x `sameish` qualifiers y
 
 instance Ord FuzzyString where
-    m <= s | master m && not (master s) = eq || gt where
-        eq = trace (printf "\t%s=%s? %s" (show m) (show s) (show $ s == m)) (s == m)
-        gt = trace (printf "\t%s>%s? %s" (show s) (show m) (show $ s > m)) (s > m)
-    s <= m | master m && not (master s) = res where
-        res = trace (printf "\t%s<=%s? %s" (show s) (show m) (show r)) r
-        r = ns && qs && cs
+    m <= s | master m && not (master s) = (s == m) || (s > m) where
+    s <= m | master m && not (master s) = ns && qs && cs where
         ns = name s `lte` name m
         cs = categories m `hasAll` categories s
         qs = categories m `hasAll` categories s
-    x <= y = res where
-        res = trace (printf "\t%s<=%s? %s" (show x) (show y) (show r)) r
-        r = ns && qs && cs
+    x <= y = ns && qs && cs where
         ns = name x `lte` name y
         cs = categories x `sameish` categories y
         qs = qualifiers x `sameish` qualifiers y

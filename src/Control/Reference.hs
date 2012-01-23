@@ -9,6 +9,7 @@ import Control.Modifier ( category, qualifier )
 import {-# SOURCE #-} Data.Directory
 import Data.Either
 import Data.List hiding ( find )
+import Data.String.Utils ( strip )
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
@@ -69,7 +70,7 @@ catOrQual = try (Left <$> category)
 
 -- Showing
 instance Show Reference where
-    show (Ref t cs qs es) = printf "%s%s%s%s" t
+    show (Ref t cs qs es) = printf "%s%s%s%s" (strip t)
         (if null cs then "" else " #"++intercalate "#" cs)
         (if null qs then "" else " ("++intercalate ") (" qs ++ ")")
         (if null es then "" else " !"++intercalate "!" es)

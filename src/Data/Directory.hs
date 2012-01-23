@@ -94,12 +94,9 @@ buildMap b = foldr insertAll Map.empty where
 
 find :: Reference -> Operation (Maybe (Key, Body))
 find ref = do
-    warn (Looking ref)
     let get = fromMaybe [] . Map.lookup (fromRef ref)
     xs <- get <$> lift (asks priorityMap)
-    warn (Testing "wtfpri" xs)
     ys <- get <$> lift (asks commonMap)
-    warn (Testing "wtfcom" ys)
     case (length xs, length ys) of
         (0, 0) -> warn (NotFound ref) *> pure Nothing
         (0, 1) -> pure (Just $ head ys)
