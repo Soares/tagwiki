@@ -69,7 +69,7 @@ catOrQual = try (Left <$> category)
 
 -- Showing
 instance Show Reference where
-    show (Ref t cs qs es) = printf "%s%s%s%s" (show t)
+    show (Ref t cs qs es) = printf "%s%s%s%s" t
         (if null cs then "" else " #"++intercalate "#" cs)
         (if null qs then "" else " ("++intercalate ") (" qs ++ ")")
         (if null es then "" else " !"++intercalate "!" es)

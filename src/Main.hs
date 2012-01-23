@@ -2,6 +2,8 @@ module Main where
 import Data.Either
 import Data.Functor
 import Control.Applicative
+import Control.Dangerous
+import Control.Monad.Reader
 import System.Directory
 import System.FilePath
 import System.Exit
@@ -35,4 +37,7 @@ handle errs = mapM_ print errs >> exitFailure
 process :: [(Head, Body)] -> IO ()
 process hbs = do
     let dir = Directory (map (uncurry note) hbs)
-    mapM_ print $ taglist dir
+    tups <- execute $ runReader (runDangerousT files) dir
+    print "ok then"
+    print $ head tups
+    -- mapM_ print $ taglist dirdir

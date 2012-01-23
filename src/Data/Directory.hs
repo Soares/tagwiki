@@ -6,7 +6,7 @@ module Data.Directory
     , eraOffsets
     , pinpoint
     , location
-    , taglist
+    , tagList
     , files
     ) where
 import Control.Applicative
@@ -15,9 +15,12 @@ import Control.Dangerous hiding ( Warning )
 import Control.DateTime.Moment
 import Control.DateTime.Offset
 import Data.Maybe
+import Data.Map ( Map )
+import qualified Data.Map as Map
 import Data.List ( intercalate )
 import Text.Render
 import Text.Printf
+import Text.FuzzyString
 import Text.Fragment
 import Data.Body ( Body, moment )
 import Control.Reference ( Reference(events) )
@@ -26,18 +29,18 @@ data Key = Key { ident      :: String
                , name       :: String
                , pseudonyms :: [String]
                , categories :: [String]
+               , qualifiers :: [String]
                , tags       :: [String]
-               , matches    :: Reference -> Operation (Maybe Bool)
+               , matches    :: [(FuzzyString, Bool)]
                , offset     :: String -> Maybe Offset
                , within     :: Maybe String
                }
 
 data Directory = Directory { listing :: [(Key, Body)] }
-type Handle = (Key, Body)
 type Operation = DangerousT (Reader Directory)
 
-taglist :: Directory -> [String]
-taglist = concatMap (tags . fst) . listing
+tagList :: Directory -> [String]
+tagList = concatMap (tags . fst) . listing
 
 eraOffset :: String -> Operation (Maybe Offset)
 eraOffset str = maybeFirst . mapMaybe getOffset . listing <$> lift ask
@@ -75,31 +78,39 @@ contents (k, b) = ((top ++ "\n") ++) <$> bottom where
         , ("notes", "Notes") ]
     bottom = resolve b
 
-handle :: a -> (Handle -> Operation a) -> Reference -> Operation a
-handle def fn ref = handle' =<< found where
-    handle' Nothing = pure def
-    handle' (Just h) = fn h
-    handles :: Operation [Handle]
-    handles = listing <$> lift ask
-    check :: Handle -> Operation (Maybe Bool, Handle)
-    check h@(k, _) = (,) <$> matches k ref <*> pure h
-    matchings :: Operation [(Maybe Bool, Handle)]
-    matchings = handles >>= mapM check
-    candidates :: Operation [(Maybe Bool, Handle)]
-    candidates = filter (isJust . fst) <$> matchings
-    pris :: Operation [Handle]
-    pris = (\ms -> [t | (Just True, t) <- ms]) <$> candidates
-    commons :: Operation [Handle]
-    commons = (\ms -> [t | (Just False, t) <- ms]) <$> candidates
-    found :: Operation (Maybe Handle)
-    found = join $ find <$> pris <*> commons
-    find :: [Handle] -> [Handle] -> Operation (Maybe Handle)
-    find xs ys = case (length xs, length ys) of
+
+priorityMap :: Directory -> Map FuzzyString [(Key, Body)]
+priorityMap = buildMap True . listing
+
+commonMap :: Directory -> Map FuzzyString [(Key, Body)]
+commonMap = buildMap False . listing
+
+buildMap :: Bool -> [(Key, Body)] -> Map FuzzyString [(Key, Body)]
+buildMap b = foldr insertAll Map.empty where
+    insert str kb = Map.insertWith (++) str [kb]
+    insertAll kb@(k, _) tree = foldr (insertOne kb) tree (matches k)
+    insertOne kb (str, pri) tree | pri == b = insert str kb tree
+                                 | otherwise = tree
+
+find :: Reference -> Operation (Maybe (Key, Body))
+find ref = do
+    warn (Looking ref)
+    let get = fromMaybe [] . Map.lookup (fromRef ref)
+    xs <- get <$> lift (asks priorityMap)
+    warn (Testing "wtfpri" xs)
+    ys <- get <$> lift (asks commonMap)
+    warn (Testing "wtfcom" ys)
+    case (length xs, length ys) of
         (0, 0) -> warn (NotFound ref) *> pure Nothing
-        (0, 1) -> pure $ Just $ head ys
-        (1, _) -> pure $ Just $ head xs
+        (0, 1) -> pure (Just $ head ys)
+        (1, _) -> pure (Just $ head xs)
         (_, _) -> warn (TooMany ref z zs) *> pure (Just z)
             where (z:zs) = if null xs then ys else xs
+
+handle :: a -> ((Key, Body) -> Operation a) -> Reference -> Operation a
+handle def fn ref = handle' =<< find ref where
+    handle' Nothing = pure def
+    handle' (Just h) = fn h
 
 maybeFirst :: [a] -> Maybe a
 maybeFirst [] = Nothing
@@ -109,7 +120,10 @@ firstOr :: a -> [a] -> a
 firstOr x [] = x
 firstOr _ (x:_) = x
 
-data Warning = NotFound Reference | TooMany Reference Handle [Handle]
+data Warning = NotFound Reference
+             | TooMany Reference (Key, Body) [(Key, Body)]
+             | Testing String [(Key, Body)]
+             | Looking Reference
 instance Show Warning where
     show (NotFound ref) = printf
         "Can't find reference: %s" $ show ref
@@ -118,5 +132,9 @@ instance Show Warning where
             (show ref)
             (ident $ fst x)
             (intercalate "\n\t" $ map (ident. fst) xs)
+    show (Testing str xs) = printf "Note(%s): <%s>" str
+            (intercalate "|" $ map (ident. fst) xs)
+    show (Looking ref) = printf
+        "Looking for: %s" $ show ref
 
 data Error = NotYetImplemented deriving Show
