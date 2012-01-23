@@ -11,7 +11,7 @@ import Control.Dangerous hiding ( Warning )
 import Data.Char ( toLower )
 import Data.List
 import Data.String.Utils
-import Data.Directory
+import {-# SOURCE #-} Data.Directory ( Operation )
 import Control.DateTime.Calculation
 import Control.DateTime.Expression
 import Control.DateTime.Moment

@@ -1,6 +1,7 @@
-module Data.Directory 
-    ( Directory
+module Data.Directory
+    ( Directory(Directory)
     , Operation
+    , Key(..)
     , eraOffset
     , eraOffsets
     , pinpoint
@@ -15,8 +16,8 @@ import Control.DateTime.Offset
 import Data.Maybe
 import Text.Render
 import Text.Printf
-import {-# SOURCE #-} Data.Body
-import {-# SOURCE #-} Control.Reference
+import Data.Body
+import Control.Reference
 
 data Key = Key { ident   :: String
                , name    :: String
@@ -26,16 +27,16 @@ data Key = Key { ident   :: String
                , within  :: Maybe String
                }
 
+data Directory = Directory { listing :: [(Key, Body)] }
 type Handle = (Key, Body, [String])
-type Directory = [(Key, Body)]
 type Operation = DangerousT (Reader Directory)
 
 taglist :: Directory -> [String]
-taglist = concatMap (tags . fst)
+taglist = concatMap (tags . fst) . listing
 
 eraOffset :: String -> Operation (Maybe Offset)
-eraOffset str = (first . mapMaybe getOffset) <$> ask
-    where getOffset (x, y) = offset x str
+eraOffset str = first . mapMaybe getOffset . listing <$> lift ask
+    where getOffset (x, _) = offset x str
 
 eraOffsets :: String -> Operation [Offset]
 eraOffsets str = chain =<< eraOffset str where
@@ -55,10 +56,10 @@ location :: Reference -> Operation String
 location = handle "" (pure . link') where link' (k, _, es) = href (ident k) es
 
 handle :: a -> (Handle -> Operation a) -> Reference -> Operation a
-handle def fn ref = handle' =<< find ref where
+handle def fn ref = handle' =<< found where
     handle' Nothing = warn (NotFound ref) *> pure def
     handle' (Just h) = fn h
-    find ref = (first . mapMaybe getMatch) <$> lift ask
+    found = (first . mapMaybe getMatch . listing) <$> lift ask
     getMatch (x, y) = (,,) x y <$> matches x ref
 
 first :: [a] -> Maybe a
