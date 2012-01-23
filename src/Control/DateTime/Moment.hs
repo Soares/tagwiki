@@ -59,13 +59,13 @@ clobber (Known xs ex) (Known ys ey) = Known (zipAll second xs ys) (second ex ey)
 relatable :: Maybe Era -> Maybe Era -> Operation Bool
 relatable Nothing _ = return True
 relatable _ Nothing = return True
-relatable (Just a) (Just b) = lift $ Era.relatable a b
+relatable (Just a) (Just b) = Era.relatable a b
 
 convert :: [Maybe Int] -> Maybe Era -> Maybe Era -> Operation [Maybe Int]
 convert xs Nothing _ = return xs
 convert xs _ Nothing = return xs
 convert xs (Just to) (Just from) = do
-    diffs <- lift $ asks Era.difference to from
+    diffs <- asks Era.difference to from
     return $ add xs (map Just diffs)
 
 first :: Maybe a -> Maybe a -> Maybe a

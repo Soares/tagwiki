@@ -5,13 +5,14 @@ import Control.Applicative
 import Control.DateTime.Moment
 import Text.Fragment
 import Text.Render
+import {-# SOURCE #-} Control.Reference
 import {-# SOURCE #-} Data.Body
 import {-# SOURCE #-} Data.Directory
 
 data Key = Key { id      :: String
                , name    :: String
                , tags    :: [String]
-               , matches :: String -> Maybe Bool }
+               , matches :: Reference -> Maybe Bool }
 
 data File = File Key Body
 

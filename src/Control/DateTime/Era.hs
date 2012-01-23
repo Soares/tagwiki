@@ -19,20 +19,20 @@ instance Parseable Era where
 present :: Era
 present = Era ""
 
-relatable :: Era -> Era -> Reader Directory Bool
+relatable :: Era -> Era -> Operation Bool
 relatable (Era a) (Era b) = do
-    as <- asks era a
-    bs <- asks era b
+    as <- asks eraOffsets a
+    bs <- asks eraOffsets b
     return $ root (known as) == root (known bs)
 
-difference :: Era -> Era -> Reader Directory [Int]
+difference :: Era -> Era -> Operation [Int]
 difference a b = do
-    as <- asks fromRoot a
-    bs <- asks fromRoot b
+    as <- fromRoot a
+    bs <- fromRoot b
     return $ zipAll (-) as bs
 
-fromRoot :: Era -> Reader Directory [Int]
+fromRoot :: Era -> Operation [Int]
 fromRoot (Era e) = do
-    offsets <- asks era e
+    offsets <- asks eraOffsets e
     let diffable = known offsets
     return $ foldr (zipAll (+) . diff) [] diffable

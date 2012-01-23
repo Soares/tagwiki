@@ -49,12 +49,11 @@ instance Dateable Reference where
         where unknown = Unknown $ printf "Can't pinpoint %s" (show ref)
         
 -- Resolution to string
-instance Fragment Reference where
-    resolve ref = operate ref "" (return . File.title)
+instance Fragment Reference where resolve = show
 
 -- Source file lookup
 source :: Reference -> Operation String
-source ref = operate ref "" $ return . File.link (events ref)
+source ref = operate ref "" $ return . File.reference (events ref)
 
 
 -- Parsing
@@ -85,6 +84,6 @@ catOrQual = try (Left <$> category)
 -- Showing
 instance Show Reference where
     show (Ref t cs qs es) = printf "%s%s%s%s" (show t)
-        (if null cs then "" else '#':intercalate "#" cs)
-        (if null qs then "" else '(':intercalate ")(" qs ++ ")")
-        (if null es then "" else '!':intercalate "!" es)
+        (if null cs then "" else " #"++intercalate "#" cs)
+        (if null qs then "" else " ("++intercalate ") (" qs ++ ")")
+        (if null es then "" else " !"++intercalate "!" es)

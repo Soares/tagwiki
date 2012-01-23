@@ -1,5 +1,6 @@
 module Text.Render where
 import Data.Char ( toLower )
+import Data.List
 import Data.String.Utils
 import Text.Printf
 
@@ -19,3 +20,6 @@ slugify = replace "\t" "-" . replace " " "-" . map toLower
 
 document :: String -> String -> String -> String
 document = printf "%% %s\n%s\n%s"
+
+href :: String -> [String] -> String
+href ident events = printf "%s-%s" ident (intercalate "_" events)
