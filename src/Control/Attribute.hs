@@ -23,9 +23,6 @@ instance Parseable Attribute where
     parser = at >> Attr <$> except " \t\n" <*> many parser <*> block
         where at = marker Y.attribute
 
-instance Fragment [Attribute] where
-    resolve xs = (section "Attributes" . concat) <$> mapM resolve xs
-
 instance Fragment Attribute where
     resolve (Attr k v t) = article <$> name <*> resolve t where
         name = printf "%s: %s" (strip k) <$> resolve v

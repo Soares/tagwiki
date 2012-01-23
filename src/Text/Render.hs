@@ -16,3 +16,6 @@ link = printf "<a href='%s'>%s</a>"
 
 slugify :: String -> String
 slugify = replace "\t" "-" . replace " " "-" . map toLower
+
+document :: String -> String -> String -> String
+document = printf "%% %s\n%s\n%s"

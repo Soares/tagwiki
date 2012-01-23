@@ -1,26 +1,29 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Data.File where
-import Control.Dangerous
-import Control.Monad.Reader
+import Control.Applicative
 import Control.DateTime.Moment
 import Text.Fragment
+import Text.Render
+import {-# SOURCE #-} Data.Body
 import {-# SOURCE #-} Data.Directory
 
-data File = forall f . Record f => File f
+data Key = Key { id      :: String
+               , name    :: String
+               , tags    :: [String]
+               , matches :: String -> Maybe Bool }
 
-class (Fragment f) => Record f where
-    pinpoint :: [String] -> f -> DangerousT (Reader Directory) Moment
-    reference :: [String] -> f -> String
-    title :: f -> String
+data File = File Key Body
 
-instance Record File where
-    pinpoint xs (File f) = pinpoint xs f
-    reference xs (File f) = reference xs f
-    title (File f) = title f
+pinpoint :: [String] -> File -> Operation Moment
+pinpoint _ _ = return $ Unknown "Can't pinpoint events yet"
+
+link :: [String] -> File -> String
+link _ _ = "Can't href to events yet"
+
+title :: File -> String
+title (File k _) = name k
 
 instance Fragment File where
-    resolve (File f) = resolve f
-
-instance Show File where
-    show (File f) = title f
+    resolve (File k b) = document (name k) <$> header <*> resolve b
+        where header = return "Yeah we don't do headers yet"

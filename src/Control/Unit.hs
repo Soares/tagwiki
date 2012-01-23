@@ -1,3 +1,4 @@
+{-# Language FlexibleInstances #-}
 module Control.Unit ( Unit(..), section, block ) where
 import Control.Applicative ( (<$>), (<*>) )
 import Control.Monad
@@ -35,6 +36,9 @@ instance Fragment Unit where
         txt = if null xs then resolve ref else resolve xs
         src = source ref
     resolve (Dxp c) = resolve c
+
+instance Fragment [Unit] where
+    resolve xs = concat <$> mapM resolve xs
 
 
 oLink, cLink :: GenParser Char st ()

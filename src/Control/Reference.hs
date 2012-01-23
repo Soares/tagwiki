@@ -54,7 +54,7 @@ instance Fragment Reference where
 
 -- Source file lookup
 source :: Reference -> Operation String
-source ref = operate ref "" $ return . File.reference (events ref)
+source ref = operate ref "" $ return . File.link (events ref)
 
 
 -- Parsing

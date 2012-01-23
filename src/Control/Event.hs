@@ -29,16 +29,6 @@ data Event = Event { name :: String
                    , text :: [Unit]
                    } deriving Eq
 
-
-
-data Warning = Ignored [String]
-             | Unrecognized String
-instance Show Warning where
-    show (Ignored xs) = printf
-        "Extra events ignored: [%s]" (intercalate ", " xs)
-    show (Unrecognized x) = printf
-        "Unrecognized event (resolved as !start) %s" x
-
 -- Reducing to moment
 pinpoint :: [String] -> Event -> Operation Moment
 pinpoint [] (Event _ w _) = beginning w
@@ -81,9 +71,6 @@ isEndEvent x = (map toLower . strip) x `elem`
 
 
 -- Reducing to text
-instance Fragment [Event] where
-    resolve xs = section "events" . concat <$> mapM resolve xs
-
 instance Fragment Event where
     resolve (Event n w t) = article <$> h <*> resolve t
         where h = printf "%s (%s)" (strip n) <$> resolve w
@@ -105,3 +92,14 @@ instance Parseable Event where
 -- Showing
 instance Show Event where
     show (Event k w _) = printf "!%s @%s" (show k) (show w)
+
+
+
+--- Warnings
+data Warning = Ignored [String]
+             | Unrecognized String
+instance Show Warning where
+    show (Ignored xs) = printf
+        "Extra events ignored: [%s]" (intercalate ", " xs)
+    show (Unrecognized x) = printf
+        "Unrecognized event (resolved as !start) %s" x

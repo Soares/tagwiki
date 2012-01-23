@@ -18,8 +18,5 @@ instance Show Appearance where
 instance Parseable Appearance where
     parser = marker Y.appearance >> App <$> parser <*> block
 
-instance Fragment [Appearance] where
-    resolve xs = (section "Appearances" . concat) <$> mapM resolve xs
-
 instance Fragment Appearance where
     resolve (App r t) = article <$> resolve r <*> resolve t

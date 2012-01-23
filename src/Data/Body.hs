@@ -5,6 +5,8 @@ import Control.Attribute ( Attribute )
 import Control.Event ( Event )
 import Control.Unit ( section, Unit )
 import Data.List ( intercalate )
+import qualified Text.Render as Render
+import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Printf
@@ -17,16 +19,21 @@ data Body = Body { attrs  :: [Attribute]
                  , units  :: [Unit]
                  } deriving Eq
 
-
-
-
-empty :: Body
-empty = Body [] [] [] []
-
+instance Fragment Body where
+    resolve (Body at ev ap un) = intercalate "\n\n" <$> sections where
+        sections = sequence [atts, evts, aps, unts]
+        join = intercalate "\n"
+        atts = (Render.section "Attributes" . join) <$> mapM resolve at
+        evts = (Render.section "Events" . join) <$> mapM resolve ev
+        aps = (Render.section "Appearances" . join) <$> mapM resolve ap
+        unts = resolve un
 
 
 
 -- Parsing
+empty :: Body
+empty = Body [] [] [] []
+
 instance Parseable Body where
     parser = foldr id empty <$> fill `manyTill` eof
 
