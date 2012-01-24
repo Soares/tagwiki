@@ -10,7 +10,6 @@ import Text.ParserCombinators.Parsec
 data Era = Era String deriving Eq
 
 instance Show Era where
-    show (Era "") = "«no era»"
     show (Era s) = s
 
 instance Parseable Era where

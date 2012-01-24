@@ -20,6 +20,22 @@ data Moment = Known [Maybe Int] (Maybe Era)
             | Unknown String
             deriving Eq
 
+instance Show Moment where
+    show k | k == present = "present"
+    show (Unknown str) = printf "«Unknown: %s»" str
+    show (Known ns er) = y ++ e ++ m ++ d ++ h ++ n ++ s ++ l where
+        y = get 0
+        e = maybe "" show er
+        m = shw "/" 1
+        d = shw "/" 2
+        h = shw " " 3
+        n = shw ":" 4
+        s = shw "." 5
+        l = shw "." 6
+        shw str i = if null (get i) then "" else str ++ get i
+        get i | i < length ns = maybe "" show (ns !! i)
+              | otherwise = ""
+
 class Dateable a where
     date :: a -> Operation Moment
 

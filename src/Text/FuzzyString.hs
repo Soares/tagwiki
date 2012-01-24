@@ -29,7 +29,7 @@ instance Eq FuzzyString where
         qs = qualifiers x `sameish` qualifiers y
 
 instance Ord FuzzyString where
-    m <= s | master m && not (master s) = (s == m) || (s > m) where
+    m <= s | master m && not (master s) = (s == m) || (s > m)
     s <= m | master m && not (master s) = ns && qs && cs where
         ns = name s `lte` name m
         cs = categories m `hasAll` categories s

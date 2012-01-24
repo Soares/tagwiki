@@ -27,7 +27,9 @@ instance Parseable Calculation where
     parser = calculation
 
 instance Fragment Calculation where
-    resolve _ = return "DATES CAN'T RESOLVE YET"
+    resolve (Exactly calc) = show <$> date calc
+    resolve (Range left right) = printer <$> date left <*> date (left, right)
+        where printer x y = printf "(%s, %s)" (show x) (show y)
 
 -- Parsing
 obrace, cbrace, comma :: GenParser Char st ()

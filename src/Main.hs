@@ -38,6 +38,5 @@ process :: [(Head, Body)] -> IO ()
 process hbs = do
     let dir = Directory (map (uncurry note) hbs)
     tups <- execute $ runReader (runDangerousT files) dir
-    print "ok then"
-    print $ head tups
+    mapM_ print tups
     -- mapM_ print $ taglist dirdir
