@@ -1,78 +1,31 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Control.Event
-    ( Event(..)
-    , recognizes
-    , pinpoint
-    , isStartEvent
-    , isEndEvent
-    , isDurationEvent ) where
+module Control.Event ( Event(..), recognizes ) where
 import Control.Applicative ( (<$>), (<*>) )
-import Control.Monad
-import Control.Dangerous hiding ( Warning )
-import Data.Char ( toLower )
-import Data.List
-import Data.String.Utils
-import {-# SOURCE #-} Data.Directory ( Operation )
 import Control.DateTime.Calculation
 import Control.DateTime.Expression
-import Control.DateTime.Moment
+import Control.Monad hiding ( when )
+import Control.Unit ( Unit, block )
+import Data.List
+import Data.String.Utils
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
+import Text.Point ( Point )
 import Text.Printf
-import Control.Reference ( tag )
 import Text.Render
 import Text.Utils
-import Control.Unit ( Unit, block )
+import Text.Tag ( tag )
+import qualified Text.Point as Point
 import qualified Text.Symbols as Y
 
 data Event = Event { name :: String
-                   , date :: Calculation
+                   , when :: Calculation
                    , text :: [Unit]
                    } deriving Eq
 
-recognizes :: String -> Event -> Bool
-recognizes txt e = normalize txt == normalize (name e)
-
 -- Reducing to moment
-pinpoint :: [String] -> Event -> Operation Moment
-pinpoint [] (Event _ w _) = beginning w
-pinpoint (x:xs) (Event _ w _) = do
-    unless (null xs) (warn $ Ignored xs)
-    let start = isStartEvent x
-    when (not start && not (isEndEvent x)) (warn $ Unrecognized x)
-    if start then beginning w else ending w
-
-isStartEvent :: String -> Bool
-isStartEvent x = (map toLower . strip) x `elem`
-    [ "first"
-    , "begin"
-    , "beginning"
-    , "birth"
-    , "dawn"
-    , "born"
-    , "creation"
-    , "created"
-    , "start" ]
-
-isDurationEvent :: String -> Bool
-isDurationEvent x = (map toLower . strip) x `elem`
-    [ "alive"
-    , "duration"
-    , "life"
-    , "timeframe" ]
-
-isEndEvent :: String -> Bool
-isEndEvent x = (map toLower . strip) x `elem`
-    [ "death"
-    , "died"
-    , "destruction"
-    , "destroyed"
-    , "end"
-    , "ending"
-    , "fall"
-    , "last" ]
-
+recognizes :: Point -> Event -> Bool
+recognizes p v = name v `like` Point.name p
 
 
 -- Reducing to text

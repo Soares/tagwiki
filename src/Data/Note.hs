@@ -10,11 +10,9 @@ note h b = (load h, b)
 
 load :: Head -> Key
 load h = Key { ident = show h
-             , name = case Head.names h of [] -> ""; ((_, n):_) -> n
-             , pseudonyms = drop 1 $ map snd $ Head.names h
+             , tags = map snd $ Head.names h
              , categories = Head.categories h
              , qualifiers = Head.qualifiers h
-             , tags = map snd $ Head.names h
              , matches = fromHead h
              , offset = const Nothing
              , within = Nothing

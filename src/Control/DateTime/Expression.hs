@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.DateTime.Expression ( Expression(..), Expression2(..) ) where
 import Control.Applicative ( (<$>), (<*>) )
-import Control.Reference
 import Control.Monad
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
+import Text.Pinpoint
 import Text.Printf
 import Control.DateTime.AbsDate
 import Control.DateTime.Moment hiding ( Unknown, plus, minus )
@@ -18,7 +18,7 @@ data Expression = Plus Expression Expression
                 | Minus Expression Expression
                 | Unknown
                 | Clobber Expression Expression
-                | From Reference
+                | From Pinpoint
                 | Abs AbsDate
                 | Rel RelDate
                 | At Time
@@ -29,7 +29,7 @@ instance Show Expression where
     show (Minus left right) = printf "%s + %s" (show left) (show right)
     show Unknown = "«unknown»"
     show (Clobber left right) = printf "%s ⇐ %s" (show left) (show right)
-    show (From ref) = show ref
+    show (From pin) = show pin
     show (Abs d) = show d
     show (Rel d) = show d
     show (At t) = show t
@@ -46,7 +46,7 @@ instance Dateable Expression where
         y <- date right
         let z = clobber x y
         return z
-    date (From ref) = date ref
+    date (From pp) = date pp
     date (Abs d) = date d
     date (Rel d) = date d
     date (At t) = date t

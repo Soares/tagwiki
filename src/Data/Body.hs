@@ -2,16 +2,19 @@ module Data.Body where
 import Control.Appearance ( Appearance )
 import Control.Applicative ( (<$>) )
 import Control.Attribute ( Attribute )
+import Control.DateTime.Calculation ( pinpoint, beginning )
 import Control.DateTime.Moment
-import Control.Event ( Event, recognizes, pinpoint )
+import Control.Event ( Event(when), recognizes )
 import Control.Unit ( section, Unit )
-import {-# SOURCE #-} Data.Directory ( Operation )
 import Data.List ( intercalate )
-import qualified Text.Render as Render
+import Data.Utils
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
+import Text.Point ( Point(side) )
 import Text.Printf
+import qualified Text.Render as Render
+import {-# SOURCE #-} Data.Directory ( Operation )
 
 
 
@@ -32,13 +35,12 @@ instance Fragment Body where
 
 
 -- Resolution to date
-moment :: [String] -> Body -> Operation Moment
-moment [] _ = return unknown
-moment (e:es) b = firstOr unknown <$> candidates where
-    filtered = filter (recognizes e) (events b)
-    candidates = mapM (pinpoint es) filtered
-    firstOr x [] = x
-    firstOr _ (x:_) = x
+moment :: Maybe Point -> Body -> Operation Moment
+moment Nothing b | null (events b) = return unknown
+                 | otherwise = beginning $ when $ head $ events b
+moment (Just p) b = headOr unknown <$> candidates where
+    candidates = mapM (pinpoint (side p) . when) filtered
+    filtered = filter (recognizes p) (events b)
 unknown :: Moment
 unknown = Unknown "no events defined"
 

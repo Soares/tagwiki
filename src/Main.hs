@@ -26,9 +26,9 @@ main = do
 test :: FilePath -> IO (Either ParseError (Head, Body))
 test fp = do
     txt <- readFile (src </> fp)
-    let get = (,) <$> (parser :: GenParser Char st Head)
+    let prs = (,) <$> (parser :: GenParser Char st Head)
                   <*> (parser :: GenParser Char st Body)
-    return $ parse get fp txt
+    return $ parse prs fp txt
 
 
 handle :: [ParseError] -> IO ()
@@ -36,7 +36,11 @@ handle errs = mapM_ print errs >> exitFailure
 
 process :: [(Head, Body)] -> IO ()
 process hbs = do
-    let dir = Directory (map (uncurry note) hbs)
-    tups <- execute $ runReader (runDangerousT files) dir
-    mapM_ print tups
-    -- mapM_ print $ taglist dirdir
+    let dir = Dir (map (uncurry note) hbs)
+    fs <- execute $ runDangerous $ runReaderT files dir
+    mapM_ (uncurry showf) fs
+
+showf :: String -> String -> IO ()
+showf k b = do
+    putStrLn k
+    putStrLn b

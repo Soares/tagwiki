@@ -2,11 +2,11 @@ module Data.Head where
 import Control.Applicative ( (<$>), (<*>), (<*) )
 import Control.Modifier ( Modifier, partition )
 import Control.Monad
-import Control.Reference ( tag )
 import Data.List ( intercalate )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Printf
+import Text.Tag ( tag )
 import qualified Text.Symbols as Y
 
 

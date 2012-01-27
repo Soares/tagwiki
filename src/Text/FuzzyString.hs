@@ -1,9 +1,9 @@
-module Text.FuzzyString ( FuzzyString, key, fromRef ) where
-import Control.Reference ( Reference(Ref) )
-import Data.Set ( Set )
+module Text.FuzzyString ( FuzzyString, key, fromPin ) where
 import Data.List ( sort )
+import Data.Set ( Set )
+import Text.Pin ( Pin(Pin) )
+import Text.Utils ( normalize, like )
 import qualified Data.Set as Set
-import Text.Utils ( normalize )
 
 data FuzzyString = Fuz { name       :: String
                        , categories :: Set String
@@ -12,8 +12,8 @@ data FuzzyString = Fuz { name       :: String
                        }
 
 instance Show FuzzyString where
-    show (Fuz n cs qs m) = show (Ref n c q [ms]) where
-        ms = if m then "master" else "slave"
+    show (Fuz n cs qs m) = show (Pin n c q) ++ t where
+        t = if m then "[master]" else "[slave]"
         c = sort $ Set.toList cs
         q = sort $ Set.toList qs
 
@@ -40,9 +40,6 @@ instance Ord FuzzyString where
         qs = qualifiers x `sameish` qualifiers y
 
 
-like :: String -> String -> Bool
-like x y = normalize x == normalize y
-
 lte :: String -> String -> Bool
 lte x y = normalize x <= normalize y
 
@@ -53,8 +50,8 @@ hasAll :: Set String -> Set String -> Bool
 hasAll x y = norm y `Set.isSubsetOf` norm x
     where norm = Set.map normalize 
 
-fromRef :: Reference -> FuzzyString
-fromRef (Ref n cs qs _) = Fuz n (Set.fromList cs) (Set.fromList qs) False
+fromPin :: Pin -> FuzzyString
+fromPin (Pin n cs qs) = Fuz n (Set.fromList cs) (Set.fromList qs) False
 
 key :: String -> [String] -> [String] -> FuzzyString
 key n cs qs = Fuz n (Set.fromList cs) (Set.fromList qs) True

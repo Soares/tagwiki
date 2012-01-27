@@ -1,11 +1,13 @@
 module Control.DateTime.Era where
-import Control.Monad.Reader
 import Data.Functor
 import {-# SOURCE #-} Data.Directory
 import Control.DateTime.Offset hiding ( era )
 import Control.DateTime.Utils
 import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
+
+data Era = Root String
+         | Offset Calculation Era
 
 data Era = Era String deriving Eq
 
@@ -20,8 +22,8 @@ present = Era ""
 
 relatable :: Era -> Era -> Operation Bool
 relatable (Era a) (Era b) = do
-    as <- asks eraOffsets a
-    bs <- asks eraOffsets b
+    as <- eraOffsets a
+    bs <- eraOffsets b
     return $ root (known as) == root (known bs)
 
 difference :: Era -> Era -> Operation [Int]
@@ -32,6 +34,6 @@ difference a b = do
 
 fromRoot :: Era -> Operation [Int]
 fromRoot (Era e) = do
-    offsets <- asks eraOffsets e
+    offsets <- eraOffsets e
     let diffable = known offsets
     return $ foldr (zipAll (+) . diff) [] diffable

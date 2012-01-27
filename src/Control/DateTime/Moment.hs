@@ -8,7 +8,6 @@ module Control.DateTime.Moment
     , clobber
     ) where
 import Control.Monad
-import Control.Monad.Reader
 import Data.Maybe
 import {-# SOURCE #-} Data.Directory
 import Control.DateTime.Era (Era)
@@ -48,7 +47,7 @@ present = Known [] (Just Era.present)
 plus :: Moment -> Moment -> Operation Moment
 plus (Unknown s) _ = return $ Unknown s
 plus _ (Unknown s) = return $ Unknown s
-plus (Known as ea) (Known bs eb) = asks relatable ea eb >>= plus' where
+plus (Known as ea) (Known bs eb) = relatable ea eb >>= plus' where
     plus' True = let er = first ea eb in do
         xs <- convert as er ea
         ys <- convert bs er eb
@@ -81,7 +80,7 @@ convert :: [Maybe Int] -> Maybe Era -> Maybe Era -> Operation [Maybe Int]
 convert xs Nothing _ = return xs
 convert xs _ Nothing = return xs
 convert xs (Just to) (Just from) = do
-    diffs <- asks Era.difference to from
+    diffs <- Era.difference to from
     return $ add xs (map Just diffs)
 
 first :: Maybe a -> Maybe a -> Maybe a

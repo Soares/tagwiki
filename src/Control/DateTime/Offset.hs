@@ -1,9 +1,9 @@
-module Control.DateTime.Offset 
-    ( Offset
-    , era
-    , diff
-    , known
-    , root
+module Control.DateTime.Moment
+    ( Moment
+    , Momentus
+    , plus
+    , minus
+    , negate
     ) where
 import Control.Applicative ( (<$>), (<*>) )
 import Control.Monad
@@ -12,9 +12,82 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import qualified Text.Symbols as Y
 
-data Offset = Offset [Int] String
-            | Fuzzy [Int] [Int] String
-            deriving (Eq, Ord)
+data Moment = Relative [Maybe Int]
+            | Absolute [Maybe Int] String
+
+date :: Moment -> [Maybe Int]
+date (Relative xs) = xs
+date (Absolute xs _) = xs
+
+era :: Moment -> Maybe String
+era (Relative _) = Nothing
+era (Absolute _ e) = e
+
+isAbsolute, isRelative :: Moment -> Bool
+isAbsolute (Absolute _ _) = True
+isAbsolute _ = False
+isRelative (Relative _) = True
+isRelative _ = False
+
+plus :: Moment -> Moment -> RestrictedOperation Moment
+plus (Absolute xs ex) (Absolute ys ey) = flip Absolute ey <$> rebase xs ex ey
+plus (Relative xs) (Relative ys) = pure $ Relative $ add xs ys
+plus (Relative xs) (Absolute ys e) = pure $ Absolute (add xs ys) e
+plus a r = plus r a
+
+minus :: Moment -> Moment -> Moment
+minus x y = plus x (negate y)
+
+negate :: Moment -> Moment
+negate (Relative xs) = Relative (neg xs)
+negate (Absolute xs e) = Absolute (neg xs) e
+
+add :: [Maybe Int] -> [Maybe Int] -> [Maybe Int]
+add = zipAll $ liftM2 (+)
+sub :: [Maybe Int] -> [Maybe Int] -> [Maybe Int]
+sub = zipAll $ liftM2 (-)
+neg :: [Maybe Int] -> [Maybe Int]
+neg = map $ fmap (0-)
+
+root :: String -> RestrictedOperation (Maybe String)
+root (Relative _) = pure Nothing
+root (Absolute _ e) = select <$> dawn e where
+    select = maybe (pure Nothing) (root . snd)
+
+relateable :: String -> String -> RestrictedOperation Bool
+relateable x y = maybe True (uncurry (==)) <$> tuple
+    where tuple = (,) <$> root x <*> root y
+
+-- TODO: warn instead
+convert :: Moment -> String -> RestrictedOperation Moment
+convert (Relative xs) e = pure $ Absolute xs e
+convert a e = check *> make where
+    make = flip Absolute e <$> (sub <*> normal x <*> normal y)
+    check = unless <$> relateable x y <*> warning
+    warning = lift . lift . throw $ NotRelateable x y
+
+rebase :: [Maybe Int] -> String -> String -> RestrictedOperation [Maybe Int]
+rebase xs ex ey = check *> ys where
+    ys = sub <$> normal xbase <*> normal ybase
+    check = unless <$> relateable ex ey <*> die
+    die = lift . lift . throw $ NotRelateable x y
+    xbase = Absolute xs ex
+    ybase = Absolute [] ey
+
+normal :: Moment -> RestrictedOperation [Maybe Int]
+normal (Relative xs) = pure xs
+normal (Absolute xs e) = maybe (pure xs) recurse (dawn e) where
+    recurse (dir, m) = add (direct dir xs) <$> normal m
+
+direct :: Direction -> [Maybe Int] -> [Maybe Int]
+direct Positive = id
+direct Negative = neg
+
+
+
+
+
+
 
 era :: Offset -> String
 era (Offset _ e) = e

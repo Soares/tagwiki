@@ -1,5 +1,5 @@
 module Data.Directory
-    ( Directory(Directory)
+    ( Directory
     , Operation
     , Key(..)
     , eraOffset
@@ -10,128 +10,114 @@ module Data.Directory
     , files
     ) where
 import Control.Applicative
-import Control.Monad.Reader
 import Control.Dangerous hiding ( Warning )
 import Control.DateTime.Moment
 import Control.DateTime.Offset
-import Data.Maybe
-import Data.Map ( Map )
-import qualified Data.Map as Map
-import Data.List ( intercalate )
-import Text.Render
-import Text.Printf
-import Text.FuzzyString
-import Text.Fragment
+import Control.Monad.Reader
+import Control.Monad.State
 import Data.Body ( Body, moment )
-import Control.Reference ( Reference(events) )
+import Data.List ( intercalate )
+import Data.Map ( Map )
+import Data.Maybe
+import Data.Utils
+import Text.Fragment
+import Text.Reference
+import Text.Pin ( Pin )
+import Text.Point ( Point(Point) )
+import Text.Printf
+import Text.Render
+import qualified Data.Map as Map
+import qualified Text.Pin as Pin
 
-data Key = Key { ident      :: String
-               , name       :: String
-               , pseudonyms :: [String]
-               , categories :: [String]
-               , qualifiers :: [String]
-               , tags       :: [String]
-               , matches    :: [(FuzzyString, Bool)]
-               , offset     :: String -> Maybe Offset
-               , within     :: Maybe String
-               }
-
-data Directory = Directory { listing :: [(Key, Body)] }
-type Operation = DangerousT (Reader Directory)
-
-tagList :: Directory -> [String]
-tagList = concatMap (tags . fst) . listing
-
-eraOffset :: String -> Operation (Maybe Offset)
-eraOffset str = maybeFirst . mapMaybe getOffset . listing <$> lift ask
-    where getOffset (x, _) = offset x str
-
-eraOffsets :: String -> Operation [Offset]
-eraOffsets str = chain =<< eraOffset str where
-    chain (Just o) = (o:) <$> eraOffsets (era o)
-    chain Nothing = pure []
-
-pinpoint :: Reference -> Operation Moment
-pinpoint ref = handle unknown pinpoint' ref where
-    pinpoint' (_, b) = moment (events ref) b
-    unknown = Unknown $ show $ NotFound ref
-
-location :: Reference -> Operation String
-location ref = handle "" (pure . link') ref where
-    link' (k, _) = href (ident k) (firstOr "" (events ref))
-
-files :: Operation [(String, String)]
-files = mapM file . listing =<< lift ask where
-    file (k, b) = (,) (name k) <$> contents (k, b)
-
-contents :: (Key, Body) -> Operation String
-contents (k, b) = ((top ++ "\n") ++) <$> bottom where
-    top = concat [tit, hed, aka, cats, toc]
-    tit = title (name k)
-    hed = header (name k)
-    aka = section "Pseudonyms" (list $ pseudonyms k)
-    cats = section "Categories" (list $ categories k)
-    toc = reference
-        [ ("attributes", "Attributes")
-        , ("appearances", "Appearances")
-        , ("events", "Events")
-        , ("notes", "Notes") ]
-    bottom = resolve b
+data File = forall a. Record a => File { getRecord :: Record }
 
 
-priorityMap :: Directory -> Map FuzzyString [(Key, Body)]
-priorityMap = buildMap True . listing
+data Directory = Dir { listing :: [File]
+                     , eras    :: Map String File
+                     , places  :: Tree File }
 
-commonMap :: Directory -> Map FuzzyString [(Key, Body)]
-commonMap = buildMap False . listing
 
-buildMap :: Bool -> [(Key, Body)] -> Map FuzzyString [(Key, Body)]
-buildMap b = foldr insertAll Map.empty where
-    insert str kb = Map.insertWith (++) str [kb]
-    insertAll kb@(k, _) tree = foldr (insertOne kb) tree (matches k)
-    insertOne kb (str, pri) tree | pri == b = insert str kb tree
-                                 | otherwise = tree
+type Operation = ReaderT Directory Dangerous
+type RestrictedOperation = StateT [String] Operation
+type SearchOperation = StateT [File] Operation
 
-find :: Reference -> Operation (Maybe (Key, Body))
-find ref = do
-    let get = fromMaybe [] . Map.lookup (fromRef ref)
-    xs <- get <$> lift (asks priorityMap)
-    ys <- get <$> lift (asks commonMap)
-    case (length xs, length ys) of
-        (0, 0) -> warn (NotFound ref) *> pure Nothing
-        (0, 1) -> pure (Just $ head ys)
-        (1, _) -> pure (Just $ head xs)
-        (_, _) -> warn (TooMany ref z zs) *> pure (Just z)
-            where (z:zs) = if null xs then ys else xs
 
-handle :: a -> ((Key, Body) -> Operation a) -> Reference -> Operation a
-handle def fn ref = handle' =<< find ref where
-    handle' Nothing = pure def
-    handle' (Just h) = fn h
 
-maybeFirst :: [a] -> Maybe a
-maybeFirst [] = Nothing
-maybeFirst (x:_) = Just x
+-- Directory building
 
-firstOr :: a -> [a] -> a
-firstOr x [] = x
-firstOr _ (x:_) = x
+-- Maps of strings on to files, in order of priority
+maps :: Directory -> [Map Reference [File]]
+maps dir = [build True files, build False files] where
+    files = listing dir
+    build flag = foldr (addKeys flag) Map.empty
+    addKeys flag file dict = foldr (addKey file) dict (keys flag file)
+    addKey file key dict = map.insertWith (++) key [file] dict
 
-data Warning = NotFound Reference
-             | TooMany Reference (Key, Body) [(Key, Body)]
-             | Testing String [(Key, Body)]
-             | Looking Reference
+checkForAmbiguities :: Operation Directory
+checkForAmbiguities = mapM_ (lift . warn . Ambiguous) offending
+    where offending = Map.filter ((> 1) . length) . maps <$> ask
+
+tags :: Directory -> [(String, FilePath)]
+tags = concatMap Record.tags . listing
+
+-- TODO
+dawn :: String -> File -> RestrictedOperation (Maybe (Direction, Moment))
+
+
+
+
+resolveEra :: String -> RestrictedOperation (Direction, [Moment])
+resolveEra str = check *> use <$> offset
+    -- wtf
+    use off = fromMaybe (pure []) (modify (str:) *> resolve off)
+    resolve (dir, m) = ((,) dir) <$> ((m:) <$> recurse m)
+    check = when . (str `elem`) <$> err <*> get
+    err = lift . lift . throw . EraCycle
+    maybeFile = lookup str . eras <$> lift ask
+    offset = dawn <$> maybeFile
+    recurse 
+    recurse = maybe (pure []) $ resolveEra . Offset.era
+
+pinpoint :: Pin -> Maybe Point -> Operation Moment
+pinpoint pin point = operate unknown (moment point) pin
+    where unknown = Unknown $ show $ Notfound pin
+
+location :: Pin -> Maybe Point -> Operation String
+-- TODO: link needs its parameters switched
+location pin point = operate "" (link $ hash e) pin
+    where hash = fromMaybe Nothing Point.name
+
+descend :: File -> SearchOperation File
+descend file = check *> modify (file:) *> pure file where
+    check = when . (p `elem`) <$> get <*> die
+    -- TODO: turn bind around?
+    die = get >>= lift $ lift $ throw $ Cycle (file:)
+
+find :: Pin -> FileOperation (Maybe File)
+find pin = if pin == Pin.empty then current else getFirst matches where
+    current = maybeHead <$> get
+    matches = (map head . lookupList pin) . maps <$> get
+    lookupList = fromMaybe [] May.lookup
+    getFirst [] = lift (lift $ warn $ NotFound pin) *> pure Nothing
+    getFirst (x:_) = Just <$> descend x
+
+operate :: a -> (File -> Operation a) -> Pin -> Operation a
+operate x fn pin = maybe (pure x) (fn . fst) (runStateT (find pin) [])
+
+
+data Warning = NotFound Pin | Ambiguous [File]
+
+
+data Error = NotYetImplemented | Cycle [File]
+
+
 instance Show Warning where
-    show (NotFound ref) = printf
-        "Can't find reference: %s" $ show ref
-    show (TooMany ref x xs) = printf
-        "Found multiple matches for %s. Using %s, Ignoring:\n\t%s"
-            (show ref)
-            (ident $ fst x)
-            (intercalate "\n\t" $ map (ident. fst) xs)
-    show (Testing str xs) = printf "Note(%s): <%s>" str
-            (intercalate "|" $ map (ident. fst) xs)
-    show (Looking ref) = printf
-        "Looking for: %s" $ show ref
+    show (NotFound pin) = printf "Can't find '%s'" $ show pin
+    show (Ambiguous fs) = printf "File names are ambiguous:\n%s"
+        (intercalate "\n\t" $ map identifier fs)
 
-data Error = NotYetImplemented deriving Show
+
+instance Show Error where
+    show NotYetImplemented = "not yet implemented"
+    show (Cycle fs) = printf "references form cycle:\n%s"
+        (intercalate "\n\t" $ map identifier fs)

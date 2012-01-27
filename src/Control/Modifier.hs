@@ -32,7 +32,7 @@ partition :: [Modifier] -> ([String], [String], [String], [String], [String])
 partition m = ( [c | Cat c <- m]
               , [q | Qal q <- m]
               , [p | Pre p <- m]
-              , [s | Pre s <- m]
+              , [s | Suf s <- m]
               , [t | Trl t <- m] )
 
 restricted :: String
