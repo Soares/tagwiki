@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Data.Directory
     ( Directory(..)
+    , File(..)
     , Momentable
     , Operable
     , checkForAmbiguities
@@ -60,10 +61,14 @@ instance (Operable a) => Operable (StateT [File] a)
 instance (Operable a) => Operable (StateT [String] a)
 instance (Operable a) => Restricted (StateT [File] a)
 
+-- Actual construction!
+instance Operable (ReaderT Directory Dangerous)
+instance Momentable (StateT [String] (ReaderT Directory Dangerous))
+
 data Directory = Dir { listing :: [File]
                      , eras    :: Map String File
-                     , places  :: Tree File }
-    
+                     , places  :: Maybe (Tree File) }
+
 
 
 -- Directory building

@@ -6,7 +6,7 @@ import Data.List
 import Data.Record ( Record )
 import Data.Either
 import Text.Tag ( tag )
-import Control.Modifier ( category, qualifier )
+import Control.Modifier
 import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
@@ -54,5 +54,10 @@ firstLine = (name `sepBy` designator Y.comma) <* eol where
 secondLine :: GenParser Char st [Either String String]
 secondLine = catOrQual `manyTill` (whitespace *> eol) where
     catOrQual = try (Left <$> category)
+            -- TODO: testing only
+            <|> (Right <$> prefix)
+            <|> (Right <$> suffix)
+            <|> (Right <$> trail)
+            -- ENDTODO
             <|> (Right <$> qualifier)
             <?> "category or qualifier"

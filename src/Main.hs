@@ -1,17 +1,18 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Main where
 import Control.Applicative
 import Control.Dangerous
 import Control.Monad.Reader
-import Data.Body
+import Control.Monad.State
 import Data.Directory
 import Data.Either
-import Data.Functor
-import Data.Head
 import Data.Note
+import Data.Record
+import qualified Data.Map as Map
 import System.Directory
 import System.Exit
 import System.FilePath
-import Text.ParserCombinators.Parsec ( parse, GenParser, ParseError )
+import Text.ParserCombinators.Parsec ( parse, ParseError )
 import Text.ParserCombinators.TagWiki
 
 src :: String
@@ -20,27 +21,36 @@ src = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/src"
 main :: IO ()
 main = do
     fs <- filter (not . (== '.') . head) <$> getDirectoryContents src
-    (errs, hbs) <- partitionEithers <$> mapM test fs
-    if null errs then process hbs else handle errs
+    (errs, notes) <- partitionEithers <$> mapM test fs
+    if null errs then process (map File notes) else handle errs
 
-test :: FilePath -> IO (Either ParseError (Head, Body))
-test fp = do
-    txt <- readFile (src </> fp)
-    let prs = (,) <$> (parser :: GenParser Char st Head)
-                  <*> (parser :: GenParser Char st Body)
-    return $ parse prs fp txt
+test :: FilePath -> IO (Either ParseError Note)
+test fp = parse parser fp <$> readFile (src </> fp)
 
 
 handle :: [ParseError] -> IO ()
 handle errs = mapM_ print errs >> exitFailure
 
-process :: [(Head, Body)] -> IO ()
-process hbs = do
-    let dir = Dir (map (uncurry note) hbs)
-    fs <- execute $ runDangerous $ runReaderT files dir
-    mapM_ (uncurry showf) fs
+process :: [File] -> IO ()
+process notes = do
+    let dir = Dir notes Map.empty Nothing
+    execute $ runDangerous $ runReaderT checkForAmbiguities dir
+    mapM_ (outputThrough dir) notes
 
-showf :: String -> String -> IO ()
-showf k b = do
-    putStrLn k
-    putStrLn b
+-- type Operation = ReaderT Directory Dangerous
+-- type RestrictedOperation = StateT [String] Operation
+
+-- runMomentable :: (Momentable m) => Directory -> m a -> Dangerous a
+runMomentable :: StateT [String] (ReaderT Directory Dangerous) a -> Directory -> Dangerous a
+runMomentable wfn dir = fst <$> runReaderT (runStateT wfn []) dir
+
+getText :: File -> Directory -> Dangerous String
+getText file = runMomentable (text file)
+
+outputThrough :: Directory -> File -> IO ()
+outputThrough dir file = do
+    let fn = filename file
+    -- TODO: check for filename collisions
+    txt <- execute $ runDangerous $ getText file dir
+    putStrLn $ "\t\t" ++ fn
+    putStrLn txt
