@@ -25,7 +25,7 @@ class (Eq a) => Record a where
         ns = map snd . filter ((== p) . fst) . Note.names $ note f
 
     filename :: a -> FilePath
-    filename = normalize . identifier
+    filename = slugify . identifier
 
     contents :: a -> Body
     contents = Note.body . note

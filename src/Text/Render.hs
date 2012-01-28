@@ -1,6 +1,5 @@
 module Text.Render where
-import Data.Char ( toLower )
-import Data.String.Utils
+import Text.Utils
 import Text.Printf
 
 header :: String -> String
@@ -29,9 +28,6 @@ article name = printf "<article id='%s'>\n<h2>%s</h2>\n%s</article>\n"
 
 link :: String -> String -> String
 link = printf "<a href='%s'>%s</a>"
-
-slugify :: String -> String
-slugify = replace "\t" "-" . replace " " "-" . map toLower
 
 href :: Maybe String -> String -> String
 href Nothing ident = ident

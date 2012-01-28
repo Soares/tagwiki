@@ -32,7 +32,7 @@ instance Fragment Event where
     resolve (Event n Nothing t) = article h <$> resolve t
         where h = printf "%s (?)" (strip n)
     resolve (Event n (Just w) t) = article <$> h <*> resolve t
-        where h = printf "%s (%s)" (strip n) <$> resolve w
+        where h = printf "%s %s" (strip n) <$> resolve w
 
 
 
