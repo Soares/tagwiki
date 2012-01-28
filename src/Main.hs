@@ -2,6 +2,7 @@
 module Main where
 import Control.Applicative
 import Control.Dangerous
+import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Directory
@@ -15,11 +16,18 @@ import System.FilePath
 import Text.ParserCombinators.Parsec ( parse, ParseError )
 import Text.ParserCombinators.TagWiki
 
-src :: String
+src, dest :: String
 src = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/src"
+dest = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/build"
+
+mkDir :: FilePath -> IO ()
+mkDir path = do
+  ex <- doesDirectoryExist path
+  unless ex (createDirectoryIfMissing True path)
 
 main :: IO ()
 main = do
+    mkDir dest
     fs <- filter (not . (== '.') . head) <$> getDirectoryContents src
     (errs, notes) <- partitionEithers <$> mapM test fs
     if null errs then process (map File notes) else handle errs
@@ -49,8 +57,6 @@ getText file = runMomentable (text file)
 
 outputThrough :: Directory -> File -> IO ()
 outputThrough dir file = do
-    let fn = filename file
-    -- TODO: check for filename collisions
     txt <- execute $ runDangerous $ getText file dir
-    putStrLn $ "\t\t" ++ fn
-    putStrLn txt
+    putStrLn $ "Writing " ++ filename file
+    writeFile (dest </> filename file) txt

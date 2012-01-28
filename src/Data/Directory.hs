@@ -151,7 +151,7 @@ data Error = NotYetImplemented | Cycle [File]
 
 instance Show Warning where
     show (NotFound pin) = printf "Can't find '%s'" $ show pin
-    show (Unknown pin mp) = printf "Uknown moment: '%s%s'"
+    show (Unknown pin mp) = printf "Unknown moment: '%s%s'"
         (show pin) (maybe "" (('#':) . show) mp)
     show (Ambiguous fs) = printf "File names are ambiguous:\n%s"
         (intercalate "\n\t" $ map Record.identifier fs)
