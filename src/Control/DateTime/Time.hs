@@ -1,11 +1,11 @@
 module Control.DateTime.Time ( Time ) where
 import Control.Applicative ( (<*) )
-import Data.Functor
 import Control.DateTime.Moment
-import Text.ParserCombinators.TagWiki
-import Text.Printf
 import Control.DateTime.Parser
 import Control.DateTime.Utils
+import Data.Functor
+import Text.ParserCombinators.TagWiki
+import Text.Printf
 
 
 data Time = Time { hour   :: Maybe Int

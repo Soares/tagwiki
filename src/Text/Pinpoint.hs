@@ -5,6 +5,7 @@ import Text.Point
 import {-# SOURCE #-} qualified Data.Directory as Dir
 import Control.Applicative hiding ( (<|>) )
 import Control.DateTime.Moment
+-- TODO: relax the constraint on Dir.location ; import Control.Monad.Trans
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
@@ -24,6 +25,6 @@ instance Fragment Pinpoint where
     resolve (One pin) = Dir.location pin Nothing
     resolve (Both pin point) = Dir.location pin (Just point)
 
-instance Dateable Pinpoint where
-    date (One pin) = Dir.pinpoint pin Nothing
-    date (Both pin point) = Dir.pinpoint pin (Just point)
+instance Momentus Pinpoint where
+    moment (One pin) = Dir.pinpoint pin Nothing
+    moment (Both pin point) = Dir.pinpoint pin (Just point)

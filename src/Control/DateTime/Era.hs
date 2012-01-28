@@ -1,10 +1,10 @@
 module Control.DateTime.Era where
-import Data.Functor
-import {-# SOURCE #-} Data.Directory
 import Control.DateTime.Offset hiding ( era )
 import Control.DateTime.Utils
-import Text.ParserCombinators.TagWiki
+import Data.Functor
 import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
+import {-# SOURCE #-} Data.Directory
 
 data Era = Root String
          | Offset Calculation Era

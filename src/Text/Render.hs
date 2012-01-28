@@ -33,6 +33,6 @@ link = printf "<a href='%s'>%s</a>"
 slugify :: String -> String
 slugify = replace "\t" "-" . replace " " "-" . map toLower
 
-href :: String -> String -> String
-href ident "" = ident
-href ident x = printf "%s#%s" ident x
+href :: Maybe String -> String -> String
+href Nothing ident = ident
+href (Just x) ident = printf "%s#%s" ident x

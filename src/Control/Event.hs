@@ -1,9 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.Event ( Event(..), recognizes ) where
-import Control.Applicative ( (<$>), (<*>) )
+import Control.Applicative hiding ( (<|>) )
 import Control.DateTime.Calculation
 import Control.DateTime.Expression
-import Control.Monad hiding ( when )
 import Control.Unit ( Unit, block )
 import Data.List
 import Data.String.Utils
@@ -19,7 +18,7 @@ import qualified Text.Point as Point
 import qualified Text.Symbols as Y
 
 data Event = Event { name :: String
-                   , when :: Calculation
+                   , when :: Maybe Calculation
                    , text :: [Unit]
                    } deriving Eq
 
@@ -30,20 +29,20 @@ recognizes p v = name v `like` Point.name p
 
 -- Reducing to text
 instance Fragment Event where
-    resolve (Event n w t) = article <$> h <*> resolve t
+    resolve (Event n Nothing t) = article h <$> resolve t
+        where h = printf "%s (?)" (strip n)
+    resolve (Event n (Just w) t) = article <$> h <*> resolve t
         where h = printf "%s (%s)" (strip n) <$> resolve w
 
 
 
 -- Parsing
 instance Parseable Event where
-    parser = marker Y.event >> liftM3 Event tag calc block where
-        datePart = Abs <$> parser
-        timePart = At <$> parser
-        calc = try parser
-           <|> try (Exactly <$> (Clobber <$> datePart <*> timePart))
-           <|> (Exactly <$> datePart)
-           <?> "date for event"
+    parser = marker Y.event >> (Event <$> tag <*> calc <*> block) where
+        -- TODO: add "unknown" parseable
+        calc = try (Just <$> parser)
+           <|> try (Just . Exactly <$> (DateTime <$> parser))
+           <|> pure Nothing
 
 
 

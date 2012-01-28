@@ -1,20 +1,20 @@
 module Data.Body where
 import Control.Appearance ( Appearance )
-import Control.Applicative ( (<$>) )
+import Control.Applicative hiding ( (<|>), empty )
 import Control.Attribute ( Attribute )
 import Control.DateTime.Calculation ( pinpoint, beginning )
 import Control.DateTime.Moment
 import Control.Event ( Event(when), recognizes )
 import Control.Unit ( section, Unit )
 import Data.List ( intercalate )
-import Data.Utils
+import Data.Maybe
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Point ( Point(side) )
 import Text.Printf
 import qualified Text.Render as Render
-import {-# SOURCE #-} Data.Directory ( Operation )
+import {-# SOURCE #-} Data.Directory ( Momentable )
 
 
 
@@ -35,15 +35,26 @@ instance Fragment Body where
 
 
 -- Resolution to date
-moment :: Maybe Point -> Body -> Operation Moment
-moment Nothing b | null (events b) = return unknown
-                 | otherwise = beginning $ when $ head $ events b
-moment (Just p) b = headOr unknown <$> candidates where
-    candidates = mapM (pinpoint (side p) . when) filtered
-    filtered = filter (recognizes p) (events b)
-unknown :: Moment
-unknown = Unknown "no events defined"
+moment :: (Momentable m) => Maybe Point -> Body -> m (Maybe Moment)
+-- TODO: applicify
+moment Nothing b | null $ events b = pure Nothing
+                 | otherwise = do
+                    let whens = mapMaybe when (events b)
+                    pinpoints <- mapM beginning whens
+                    return $ if null pinpoints then Nothing else Just (head pinpoints)
+moment (Just p) b = do
+    let filtered = filter (recognizes p) (events b)
+    let whens = mapMaybe when filtered
+    pinpoints <- mapM (pinpoint $ side p) whens
+    return $  if null pinpoints then Nothing else Just (head pinpoints)
 
+{-
+moment (Just p) b = maybeFirst <$> candidates where
+    candidates = mapM (pinpoint $ side p) whens
+    whens = mapMaybe when filtered
+    filtered = filter (recognizes p) (events b)
+    maybeFirst xs = if null xs then Nothing else Just $ head xs
+    -}
 
 -- Parsing
 empty :: Body

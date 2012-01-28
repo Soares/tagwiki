@@ -1,18 +1,18 @@
 module Main where
-import Data.Either
-import Data.Functor
 import Control.Applicative
 import Control.Dangerous
 import Control.Monad.Reader
-import System.Directory
-import System.FilePath
-import System.Exit
-import Data.Note
+import Data.Body
 import Data.Directory
+import Data.Either
+import Data.Functor
+import Data.Head
+import Data.Note
+import System.Directory
+import System.Exit
+import System.FilePath
 import Text.ParserCombinators.Parsec ( parse, GenParser, ParseError )
 import Text.ParserCombinators.TagWiki
-import Data.Head
-import Data.Body
 
 src :: String
 src = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/src"

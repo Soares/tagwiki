@@ -1,7 +1,5 @@
 module Control.Modifier
-    ( Modifier(..)
-    , partition
-    , category
+    ( category
     , qualifier
     , prefix
     , suffix
@@ -12,28 +10,6 @@ import Data.String.Utils
 import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import qualified Text.Symbols as Y
-
-data Modifier = Cat String
-              | Qal String
-              | Pre String
-              | Suf String
-              | Trl String
-              deriving (Eq, Show)
-
-instance Parseable Modifier where
-    parser = try (Cat <$> category)
-         <|> try (Qal <$> qualifier)
-         <|> try (Pre <$> prefix)
-         <|> try (Suf <$> suffix)
-         <|> (Trl <$> trail)
-         <?> "any modifier"
-
-partition :: [Modifier] -> ([String], [String], [String], [String], [String])
-partition m = ( [c | Cat c <- m]
-              , [q | Qal q <- m]
-              , [p | Pre p <- m]
-              , [s | Suf s <- m]
-              , [t | Trl t <- m] )
 
 restricted :: String
 restricted = Y.restrictedInRefs ++ Y.restrictedInMods
