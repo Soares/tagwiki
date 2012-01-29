@@ -1,5 +1,8 @@
 module Data.Trail
     ( Trail(..)
+    , ascendEra
+    , ascendFile
+    , ascendRef
     , currentEra
     , currentFile
     , currentRef
@@ -13,6 +16,7 @@ import {-# SOURCE #-} Text.Pinpoint
 import {-# SOURCE #-} Data.Directory
 import Data.Utils
 
+-- TODO: make a prettier show instance
 data Trail = Trail { eraTrail  :: [String]
                    , refTrail  :: [Pinpoint]
                    , fileTrail :: [File]
@@ -35,6 +39,15 @@ descendRef p t = t{refTrail=p:refTrail t}
 
 descendFile :: File -> Trail -> Trail
 descendFile p t = t{fileTrail=p:fileTrail t}
+
+ascendEra :: Trail -> Trail
+ascendEra t = t{eraTrail=tail $ eraTrail t}
+
+ascendRef :: Trail -> Trail
+ascendRef t = t{refTrail=tail $ refTrail t}
+
+ascendFile :: Trail -> Trail
+ascendFile t = t{fileTrail=tail $ fileTrail t}
 
 verify :: Trail -> Bool
 verify t = verify' (refTrail t) && verify' (eraTrail t) where

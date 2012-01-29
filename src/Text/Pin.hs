@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Text.Pin ( Pin(..), empty ) where
+import Text.Utils
 import Control.Applicative hiding ( many, (<|>), empty )
 import qualified Control.Modifier as Mods
 import Data.List hiding ( find )
@@ -7,6 +8,7 @@ import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Printf
+import Data.Set ( fromList )
 import qualified Text.Tag as Tag
 
 
@@ -14,7 +16,12 @@ import qualified Text.Tag as Tag
 data Pin = Pin { tag        :: String
                , categories :: [String]
                , qualifiers :: [String]
-               } deriving (Eq, Ord)
+               } deriving Ord
+
+instance Eq Pin where
+    x == y = tag x `like` tag y && cs && qs where
+        cs = fromList (categories x) == fromList (categories y)
+        qs = fromList (qualifiers x) == fromList (qualifiers y)
 
 empty :: Pin
 empty = Pin{tag="", categories=[], qualifiers=[]}

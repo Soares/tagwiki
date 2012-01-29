@@ -4,7 +4,7 @@ import Control.Applicative
 import Control.Dangerous
 import Control.Monad
 import Control.Monad.Reader
-import Control.Monad.State
+import Control.Monad.State hiding ( State )
 import Data.Directory
 import Data.Either
 import Data.Note
@@ -17,7 +17,7 @@ import qualified Data.Map as Map
 import System.Directory
 import System.Exit
 import System.FilePath
-import Data.Trail ( Trail, home )
+import Data.State ( clean )
 import Text.ParserCombinators.Parsec ( parse, ParseError, GenParser )
 import Text.ParserCombinators.TagWiki
 
@@ -33,17 +33,18 @@ mkDir path = do
 main :: IO ()
 main = do
     mkDir dest
-    fs <- files
+    fs <- locate
     let dir = createDir fs
     mapM_ print (allRefs dir)
-    mapM_ (outputThrough dir) fs
+    pairs <- execute $ runDangerous $ runMomentable clean files dir
+    mapM_ (uncurry output) pairs
 
 createDir :: [File] -> Directory
 createDir fs = foldr alter new fs where
     new = Dir fs Map.empty Nothing
 
-files :: IO [File]
-files = do
+locate :: IO [File]
+locate = do
     nms <- filter (not . (== '.') . head) <$> getDirectoryContents src
     (errs, fs) <- partitionEithers <$> mapM load nms
     unless (null errs) (handle errs)
@@ -56,22 +57,17 @@ load f = parse parser' f <$> readFile (src </> f) where
         ".char" -> File <$> (parser :: GenParser Char st Character)
         _ -> File <$> (parser :: GenParser Char st Note)
 
-
 handle :: [ParseError] -> IO ()
 handle errs = mapM_ print errs >> exitFailure
 
-getText :: File -> Directory -> Dangerous String
-getText file = runMomentable (text file) where
+runMomentable :: State ->
+                 StateT State (ReaderT Directory Dangerous) a ->
+                 Directory ->
+                 Dangerous a
+runMomentable st wfn dir = fst <$> runReaderT (runStateT wfn st) dir
 
-runMomentable :: StateT Trail (ReaderT Directory Dangerous) a
-                    -> Directory -> Dangerous a
-runMomentable wfn dir = fst <$> runReaderT (runStateT wfn home) dir
-
-outputThrough :: Directory -> File -> IO ()
-outputThrough dir file = do
-    putStrLn $ "(in " ++ show file ++ ")"
-    txt <- execute $ runDangerous $ getText file dir
-    writeFile (dest </> filename file) txt
+output :: FilePath -> String -> IO ()
+output path = writeFile (dest </> path)
 
 showFiles :: Directory -> IO ()
 showFiles = mapM_ print . sort . allRefs

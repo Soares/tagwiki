@@ -12,9 +12,9 @@ module Control.DateTime.Moment
 import Control.Applicative hiding ( (<|>) )
 import Control.Dangerous
 import Control.DateTime.Parser
-import Control.Monad
-import Control.Monad.State
-import Data.Trail
+import Control.Monad hiding ( guard )
+import {-# SOURCE #-} Data.State
+import {-# SOURCE #-} Data.Trail ( Trail )
 import Data.Maybe
 import Prelude hiding ( negate )
 import Text.ParserCombinators.Parsec
@@ -65,11 +65,9 @@ root :: (Momentable m) => String -> m String
 root "" = pure ""
 root e = maybe (pure "") recurse =<< offset e where
     recurse (_, m) = do
-        trail <- get
-        modify (descendEra e)
-        new <- get
-        unless (verify new) (throw $ EraCycle $ eraTrail new)
-        root (era m) <* put trail
+        pushEra e
+        guard EraCycle
+        root (era m) <* popEra
 
 relateable :: (Momentable m) => String -> String -> m Bool
 relateable x y = (==) <$> root x <*> root y
@@ -141,7 +139,7 @@ class Momentus a where
     moment :: (Momentable m) => a -> m Moment
 
 data Error = NotRelateable String String
-           | EraCycle [String]
+           | EraCycle Trail
            deriving Show
 
 zipAll :: (a -> a -> a) -> [a] -> [a] -> [a]

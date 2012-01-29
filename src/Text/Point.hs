@@ -2,6 +2,7 @@ module Text.Point
     ( Point(..)
     , Side(Start, End)
     ) where
+import Text.Utils
 import Control.Applicative hiding ( (<|>), many )
 import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec
@@ -17,7 +18,9 @@ data Side = Start | End | Auto
 
 data Point = Point { side :: Side
                    , name :: String
-                   } deriving (Eq, Ord)
+                   } deriving Ord
+instance Eq Point where
+    x == y = side x == side y && name x `like` name y
 
 
 -- TODO: implement synonyms for start/end

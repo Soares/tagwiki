@@ -1,1 +1,3 @@
-module Data.Trail where data Trail
+module Data.Trail where
+data Trail
+instance Show Trail
