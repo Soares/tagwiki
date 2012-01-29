@@ -8,12 +8,14 @@ import Control.Monad.State
 import Data.Directory
 import Data.Either
 import Data.Note
+import Data.Era
 import Data.Record
 import qualified Data.Map as Map
 import System.Directory
 import System.Exit
 import System.FilePath
-import Text.ParserCombinators.Parsec ( parse, ParseError )
+import Text.Printf
+import Text.ParserCombinators.Parsec ( parse, ParseError, GenParser )
 import Text.ParserCombinators.TagWiki
 
 src, dest :: String
@@ -29,21 +31,24 @@ main :: IO ()
 main = do
     mkDir dest
     fs <- filter (not . (== '.') . head) <$> getDirectoryContents src
-    (errs, notes) <- partitionEithers <$> mapM test fs
-    if null errs then process (map File notes) else handle errs
+    (errs, files) <- partitionEithers <$> mapM load fs
+    if null errs then process (map File files) else handle errs
 
-test :: FilePath -> IO (Either ParseError Note)
-test fp = parse parser fp <$> readFile (src </> fp)
+load :: FilePath -> IO (Either ParseError File)
+load f = parse parser' f <$> readFile (src </> f) where
+    parser' = case takeExtension f of
+        "era" -> File <$> (parser :: GenParser Char st Era)
+        _ -> File <$> (parser :: GenParser Char st Note)
 
 
 handle :: [ParseError] -> IO ()
 handle errs = mapM_ print errs >> exitFailure
 
 process :: [File] -> IO ()
-process notes = do
-    let dir = Dir notes Map.empty Nothing
+process files = do
+    let dir = Dir files Map.empty Nothing
     execute $ runDangerous $ runReaderT checkForAmbiguities dir
-    mapM_ (outputThrough dir) notes
+    mapM_ (outputThrough dir) files
 
 -- type Operation = ReaderT Directory Dangerous
 -- type RestrictedOperation = StateT [String] Operation
@@ -58,5 +63,5 @@ getText file = runMomentable (text file)
 outputThrough :: Directory -> File -> IO ()
 outputThrough dir file = do
     txt <- execute $ runDangerous $ getText file dir
-    putStrLn $ "Writing " ++ filename file
+    putStrLn $ printf "\tin %s\n" $ filename file
     writeFile (dest </> filename file) txt

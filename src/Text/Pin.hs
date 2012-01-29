@@ -1,8 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Text.Pin ( Pin(..), empty ) where
 import Control.Applicative hiding ( many, (<|>), empty )
-import Control.Modifier ( category, qualifier )
-import Data.Either
+import qualified Control.Modifier as Mods
 import Data.List hiding ( find )
 import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec
@@ -21,11 +20,12 @@ empty :: Pin
 empty = Pin{tag="", categories=[], qualifiers=[]}
 
 instance Parseable Pin where
-    parser = uncurry . Pin <$> Tag.tag <*> cqs where
-        cqs = partitionEithers <$> many catOrQual
-        catOrQual = try (Left <$> category)
-                <|> (Right <$> qualifier)
-                <?> "category or qualifier"
+    parser = do
+        name <- Tag.tag
+        mods <- many $ Mods.parse [Mods.category, Mods.qualifier]
+        pure Pin{ tag = name
+                , categories = Mods.categories mods
+                , qualifiers = Mods.qualifiers mods }
 
 instance Show Pin where
     show (Pin t cs qs) = printf "%s%s%s" (strip t)

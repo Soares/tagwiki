@@ -42,8 +42,8 @@ class (Eq a) => Record a where
     identifier :: a -> String
     identifier = normalize . name
 
-    dawn :: a -> Maybe (Direction, Moment)
-    dawn = const Nothing
+    dawn :: (Momentable m) => a -> m (Maybe Moment)
+    dawn = const $ pure Nothing
 
     parent :: a -> Maybe Pin
     parent = const Nothing

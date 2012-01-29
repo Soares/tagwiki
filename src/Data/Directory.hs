@@ -66,7 +66,7 @@ instance Operable (ReaderT Directory Dangerous)
 instance Momentable (StateT [String] (ReaderT Directory Dangerous))
 
 data Directory = Dir { listing :: [File]
-                     , eras    :: Map String File
+                     , eras    :: Map String (Direction, File)
                      , places  :: Maybe (Tree File) }
 
 
@@ -99,8 +99,12 @@ tags = concatMap tagsForFile . listing where
     tagsForFile f = map ((,) $ Record.identifier f) (Record.tags f)
 
 offset :: (Momentable m) => String -> m (Maybe (Direction, Moment))
-offset str = ask >>= era . eras where
-    era dict = pure $ (Record.dawn =<<) $ Map.lookup str dict
+offset str = era . eras =<< ask where
+    era dict = maybe (pure Nothing) locate (Map.lookup str dict)
+    failTuple (_, Nothing) = Nothing
+    failTuple (x, Just y) = Just (x, y)
+    liftSnd (x, y) = (,) x <$> y
+    locate (side, file) = failTuple <$> liftSnd (side, Record.dawn file)
 
 pinpoint :: (Momentable m) => Pin -> Maybe Point -> m Moment
 pinpoint pin point = operate present (getMoment . Record.contents) pin where

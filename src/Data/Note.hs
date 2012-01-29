@@ -1,17 +1,21 @@
 module Data.Note where
 import Control.Applicative hiding ( (<|>) )
 import Data.Set ( fromList )
-import Data.Body
+import Control.DateTime.Moment
+import Data.Body ( Body )
+import qualified Data.Body as Body
 import Data.List
 import Data.Record ( Record )
-import Data.Either
+import Text.Point ( Point )
 import Text.Tag ( tag )
-import Control.Modifier
+import Control.Modifier ( Modifier(..), category, qualifier )
+import qualified Control.Modifier as Mods
 import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
 import qualified Text.Symbols as Y
 import qualified Data.Record as Record
+import {-# SOURCE #-} Data.Directory ( Momentable )
 
 data Note = Note { names      :: [(Bool, String)]
                  , tags       :: [String]
@@ -29,15 +33,27 @@ instance Eq Note where
         qs = fromList (qualifiers x) == fromList (qualifiers y)
 
 instance Parseable Note where
-    parser = do
-        ns <- firstLine
-        (cs, qs) <- partitionEithers <$> secondLine
-        b <- parser
-        pure Note{ names = ns
-                 , tags = map (makeTag qs . snd) ns
-                 , categories = cs
-                 , qualifiers = qs
-                 , body = b }
+    -- TODO: disabled for testing purposes
+    -- parser = fst <$> parseNote (Mods.parse [category, qualifier])
+    parser = fst <$> parseNote (Mods.parse [category, qualifier,
+            Mods.prefix, Mods.suffix, Mods.trail
+        ])
+
+firstEvent :: (Momentable m) => Maybe Point -> Note -> m (Maybe Moment)
+firstEvent pt = Body.moment pt . body
+
+parseNote :: GenParser Char st Modifier -> GenParser Char st (Note, [Modifier])
+parseNote parseMods = do
+    ns <- firstLine
+    mods <- parseMods `manyTill` (whitespace *> eol)
+    let qs = Mods.qualifiers mods
+    let cs = Mods.categories mods
+    b <- parser
+    pure (Note{ names = ns
+             , tags = map (makeTag qs . snd) ns
+             , categories = cs
+             , qualifiers = qs
+             , body = b }, mods)
 
 makeTag :: [String] -> String -> String
 makeTag qs n = unwords (n:map showq (sort qs)) where
@@ -50,14 +66,3 @@ firstLine = (name `sepBy` designator Y.comma) <* eol where
         escPri = hack >> pri
         str = (++) <$> option "" escPri <*> tag
         pri = string Y.priority
-
-secondLine :: GenParser Char st [Either String String]
-secondLine = catOrQual `manyTill` (whitespace *> eol) where
-    catOrQual = try (Left <$> category)
-            -- TODO: testing only
-            <|> (Right <$> prefix)
-            <|> (Right <$> suffix)
-            <|> (Right <$> trail)
-            -- ENDTODO
-            <|> (Right <$> qualifier)
-            <?> "category or qualifier"
