@@ -1,24 +1,21 @@
 + First Line,\+ Is "comma separated" tags
-^Prefix $Suffix ,Trail #Category (qualifier)
+^Prefix $Suffix #Category (qualifier)
 
 Markdown syntax applies.
 non-markdown escape characters: \\\| \\\{ \\\\ \\s
   \\s becomes \s, a backslash that can survive markdown's escaping.
   In first line \\+ and \\" also apply
-  In first & second line, \\^ \\$ \\, \\# \\( and \\) also apply
-  In tags, \\! \\@ \\+ \\- and \\" also apply
+  In first & second line, \\^ \\$ \\# \\( and \\) also apply
+  In tags, \\! \\@ \\+ and \\- also apply
 
 :key value
   Optional description about key and value is indented like this.
   Key must be one word only. Escape spaces if you need them.
-  Value may contain links, etc.
-  In a block that follows the same rules
-  as an event block
+  Value may contain |links|, etc.
 
 !event definition {followed by date}
   Text describing event
-  Text is parsed
-  until a line with less whitespace at the beginning is found
+  Text is parsed until a line with less whitespace at the beginning is found
     (Specifically, the whitespace must match the original whitespace at
     the begining. Changing from spaces to tabs also breaks the block.)
 
@@ -27,14 +24,18 @@ non-markdown escape characters: \\\| \\\{ \\\\ \\s
 ! Absolute dates @ 1955AT/10/20
   work too, if you end the event with an @ sign
 
-! Technically @ 10AT the extra text is
+! Technically @ 10AT the extra text after the date is
   counted as part of the block.
+
+! You can leave @
+  events without dates, if the date is still unknown.
 
 @event participation
   Text describing participation
-
+  (Also used for constructing the 'place' hierarchy)
 
 Text can contains |links to tags|, which |can have #categories (and qualifiers)|
+Qualifiers may be nested with other references.
 and may |also, have different text| |note, that, only| the first comma counts
   That last link links to 'note' with the text 'that, only'
 You may also |link to an ! event| using a bang.
@@ -47,98 +48,75 @@ Note Files
     (This is on a per-tag, not per-file basis)
   Categories are hashmarked on the second line
   Qalifiers are surrounded by parenthesis on the second line
-  Prefixes are carat-prefixed, suffixes are dollar-prefixed,
-  trails are comma-prefixed
-  Past the second line, files are parsed normally
-  Each category will be in the tag file
-  For tags without qualifiers, each tag will be in the tags file
-  For tags with qualifiers, each tag will be in the tag file once per qualifier
-    Ex. Patrick, Pat    →     Patrick (Sern)
-        (Fiurge) (Sern)       Patrick (Fiurge)
-                              Pat (Sern)
-                              Pat (Fiurge)
-  For Notes, prefixes, suffixes, and trails are all ignored.
+  Each tag, fully qualified with all categories, will show up in the tag file.
 
-Character Files
-===============
+Character Files (.char)
+=======================
   Similar to Note files, with the following differences:
   The first tag is the name, further tags are nicknames
-  The name is split into multiple components.
-    It is split on spaces, except for components within quotes
-    Components in quotes have the quotes removed.
-  The following tags are generated:
-    Each nickname
-    Each category
-    All names
-    All names with all suffixes and trails (Full Name)
-    First name
-    Last name (if applicable)
-    First and last name (if there are more than two names)
-    For each prefix:
-      The prefix, the full name, and all suffixes (Titled Name)
-      The prefix, the last name, and all suffixes (Formal Name)
-    If the name has priority, then all tags using parts of the name
-      inherit that priority.
-    Examples ([+] denotes priority, reason for each name displayed on right)
+  Names are split on whitespace. Escape it for names like "Van Halen".
+  Simple references are generated for:
+    The first name
+    The last name
+    The first and last name
+    The full name
+  Suffixed references are also generated for:
+    Each simple reference with all suffixes appended (in order of appearance)
+  Prefixed references are also generated for:
+    Each prefix (alone), followed by each simple reference
+    Each perfix (alone), followed by each suffixed reference
+  Simple references are generated for all names and nicknames.
+  Suffixed references are only generated for names (not nicknames).
+  Prefixed references are only generated for names (not nicknames).
+  The total ways that you can reference a character in a link is
+    all simple references
+    all suffixed references
+    all prefixed references
 
-
-Eric Avi    →   Eric            First Name
-^Mr.            Eric Avi        Full Name
-                Mr. Eric Avi    Titled Name
-                Mr. Avi         Formal Name
-
-
-+Kyte Mallorian, Last Lord  →   Cool                    Category
-^Lord ^Prince #Cool             Kyte                    First Name      [+]
-                                Kyte Mallorian          Full Name       [+]
-                                Last Lord               Nickname
-                                Lord Kyte Mallorian     Titled Name (1) [+]
-                                Lord Mallorian          Formal Name (1) [+]
-                                Mallorian               Last Name       [+]
-                                Prince Kyte Mallorian   Titled Name (2) [+]
-                                Prince Mallorian        Formal name (2) [+]
-
-
-Joseph Two Middlenames "Van Halen", +Joe, Joe Shmoe
-^Mr. ^Grand General $Jr. ,III #cat1 #cat2
-
-→   cat1                                                        Category (1)
-    cat2                                                        Category (2)
-    Grand General Joseph Two Middlenames Van Halen Jr., III     Titled Name (2)
-    Grand General Van Halen Jr., III                            Formal Name (2)
-    Joe                                                         Nickname (1) [+]
-    Joe Shmoe                                                   Nickname (2)
-    Joseph                                                      First Name
-    Joseph Two Middlenames Van Halen                            All Names
-    Joseph Two Middlenames Van Halen Jr., III                    Full Name
-    Joseph Van Halen                                            First & last
-    Mr. Joseph Two Middlenames Van Halen Jr., III               Titled Name (1)
-    Mr. Van Halen Jr., III                                      Formal Name (1)
-    Van Halen                                                   Last Name
-
-
-Casinsky                      →    Casinsky (Fairfayette)          Full name
-^Officer (Fairfayette) #PoPo      Officer Casinsky (Fairfayette)  Titled name
-                                  PoPo                            Category
-
-
-Place Files
-===========
+Era Files (.era)
+================
   Similar to Note files, with the following differences:
-  Each place may only have one prefix
-  Prefixes past the first will be ignored
-  Each place must have a prefix
-    Unless it is a root location
-  Suffixes are included in each tag
-  In the case of name conflicts, prefixes are included in each tag as qualifiers
-  Ex. Something                 →   Something Else Entirely
-      $Providence ^Atrea            Something Providence (Atrea)
-      ...                           Something Providence (New Medici)
-      Something
-      $Providence ^New Medici
-      ...
-      Something
-      $Else Entirely ^Kaol
+  Prefixes are "codes", Suffixes are "precodes"
+    Codes mark time past the era
+    Precodes mark time before the era
+    (In the common era, AD is a code, BC and BCE are precodes)
+    The "dawn" event will be used to determin how the era relates to other eras
+      Be careful of circular era references
+      If there is no dawn event, the era is treated as a root era
+    You are encouraged to give attributes for each code and precode describing it
+
+Place Files (.place)
+====================
+  Similar to Note files, with the following differences:
+  The first @appearance B within place A marks A as a child of B
+    B will be added as a qualifier to A
+    For example, if you have
+
+      Central
+      $Providence
+      @Malloria (Kaol)
+
+    then you can reference Central as any unambiguous of
+
+      |Central|
+      |Central (Malloria)|
+      |Central (Malloria (Kaol))|
+
+  Prefixes may be given, denoting the size of this place within it's parent
+    (for use in a bubble tree representation)
+  Suffixes may be given. Suffixes cause:
+    a matching qualifier to be added
+    a "suffix of..." reference to be generated
+    a matching category to be added
+    For example, the following
+
+      Atrea
+      $Providence
+
+    is equivalent to
+
+      Atrea, Providence of Atrea
+      #Providence (Providence)
 
 
 Date Calculations
@@ -147,19 +125,17 @@ Date Calculations
 { Date calculations go in braces }
 
 {1955AT/06/03} This is just a date in the AT era
-{13:62.59.01} This is an hour, minute, second, and change
+{13:62.59.01} This is an hour, minute, second, and detail
 You can add them together by puttin them close: {1955AT 7:00}
 You may leave syntax off the front, but not the back:
-{0AT //3 :.2} = 3 days, 2 seconds
-If any parts of a date or time are missing, they are 'relative' and must be
-added to something to work. (Note the 0AT above).
+{//3 :.2} = 3 days, 2 seconds
 
 Dates may include links (minus the optional text)
-{Kyte #Cool ! marriage //3 2:} = The same year and month as Kyte's marriage, on
-the 3rd day of the month at 2:00
+{Kyte #Cool ! marriage //3 2:} = The same year and month as Kyte's 'Cool'
+marriage, on the 3rd day of the month at 2:00
 
-Notice how fragments override instead of adding. You may also add an subtract.
-{Kyte ! marriage + 10} Ten years past Kyte's marriage, same month & day
+Notice how fragments override instead of adding. You may also add and subtract.
+{Kyte ! marriage + 10} = Ten years past Kyte's marriage, same month & day
 
 NOTE: Links may contain numbers but not slashes. Therefore:
 {Kyte ! marriage 10AT/10/10} attempts to look up the event "marriage 10AT".
@@ -176,16 +152,24 @@ year 10AT)
 {Dates may span lines ! but only @
   + between tags. Tags may never @
   + contain a newline.}
-If you link to something that is not a date
-  For example, if you link to a person or a range or a note
-The following events will be attempted:
-  start
-  duration ! start
-Failing that, the earliest defined event is used
+
+You may use $ instead of ! to link to the end of an event range.
+You may use ^ instead of ! to link to the beginning of an event range
+  but this is currently the default, so don't worry about it.
+
+If an event name is not given, the first event on file will be used.
+So {Kyte} or {Kyte^} or {Kyte!} reference Kyte's birthday, while {Kyte$}
+references Kyte's death (assuming that the first event is Kyte's life range).
 
 Event synonyms
 ==============
-  The following events are synonyms for 'start':
+  We encourage using the following event names for the first event
+    alive
+    duration
+    life
+    timeframe
+
+  If you must give a one-sided event range, we suggest
     first
     begin
     birth
@@ -195,13 +179,8 @@ Event synonyms
     created
     start
 
-  The following ranges are synonyms for 'duration':
-    alive
-    duration
-    life
-    timeframe
-
-  The following events are synonyms for 'end':
+  We do not suggest using the following events, as they make it difficult
+  to use the range-selection features
     death
     destruction
     destroyed

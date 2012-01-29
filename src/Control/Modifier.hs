@@ -26,6 +26,7 @@ data Modifier = Cat String
               | Suf String
               deriving (Eq, Show)
 
+-- TODO: qualifiers need to be able to parse entire References
 parse :: [GenParser Char st Modifier] -> GenParser Char st Modifier
 parse = choice . map try
 
