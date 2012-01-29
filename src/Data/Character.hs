@@ -1,5 +1,6 @@
 module Data.Character where
 import Control.Arrow
+import Text.Utils
 import Control.Applicative hiding ( (<|>) )
 import Data.Maybe
 import Data.Utils
@@ -31,7 +32,9 @@ instance Parseable Character where
 
 updateNote :: [String] -> [String] -> Note -> Note
 updateNote ps ss n = n{ Note.names = charNames ps ss (Note.names n)
-                      , tags = charTags ps ss (map snd $ Note.names n) }
+                      , tags = charTags ps ss (map snd $ Note.names n)
+                      , Note.qualifiers = charQuals (map snd $ Note.names n)
+                                                    (Note.qualifiers n) }
 
 -- The names used internatlly to match pins
 -- Will be turned into References automatically,
@@ -45,6 +48,10 @@ charNames ps ss ((priority, primaryName):ns) = primary ++ secondary where
     primary = [(priority, x) | x <- expand primaryName]
     secondary = map (second standardName) ns
     expand = nub . addSuffixes ss . applyPrefixes ps . splitIntoNames
+
+-- Nicknames can be qualifiers
+charQuals :: [String] -> [String] -> [String]
+charQuals ns qs = nub $ map normalize ns ++ qs
 
 standardName :: String -> String
 standardName = unwords . splitIntoNames
