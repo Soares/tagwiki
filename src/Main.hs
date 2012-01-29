@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Main where
+-- TODO: imports
+-- TODO: check language extensions
 import Control.Applicative
 import Control.Dangerous
 import Control.Monad
@@ -8,8 +10,7 @@ import Control.Monad.State hiding ( State )
 import Data.Directory
 import Data.Either
 import Data.Note
-import Data.List
--- TODO: Place
+import Data.Place
 import Data.Era
 import Data.Character
 import Data.Record
@@ -25,29 +26,24 @@ src, dest :: String
 src = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/src"
 dest = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/build"
 
-mkDir :: FilePath -> IO ()
-mkDir path = do
-  ex <- doesDirectoryExist path
-  unless ex (createDirectoryIfMissing True path)
-
 main :: IO ()
 main = do
-    mkDir dest
+    ex <- doesDirectoryExist dest
+    unless ex (createDirectoryIfMissing True dest)
     fs <- locate
     let dir = createDir fs
-    mapM_ print (allRefs dir)
     pairs <- execute $ runDangerous $ runMomentable clean files dir
-    mapM_ (uncurry output) pairs
+    mapM_ (uncurry $ writeFile . (dest </>)) pairs
 
 createDir :: [File] -> Directory
 createDir fs = foldr alter new fs where
-    new = Dir fs Map.empty Nothing
+    new = Dir fs Map.empty Map.empty
 
 locate :: IO [File]
 locate = do
     nms <- filter (not . (== '.') . head) <$> getDirectoryContents src
     (errs, fs) <- partitionEithers <$> mapM load nms
-    unless (null errs) (handle errs)
+    unless (null errs) (mapM_ print errs >> exitFailure)
     return $ map File fs
 
 load :: FilePath -> IO (Either ParseError File)
@@ -55,19 +51,11 @@ load f = parse parser' f <$> readFile (src </> f) where
     parser' = case takeExtension f of
         ".era" -> File <$> (parser :: GenParser Char st Era)
         ".char" -> File <$> (parser :: GenParser Char st Character)
+        ".place" -> File <$> (parser :: GenParser Char st Place)
         _ -> File <$> (parser :: GenParser Char st Note)
-
-handle :: [ParseError] -> IO ()
-handle errs = mapM_ print errs >> exitFailure
 
 runMomentable :: State ->
                  StateT State (ReaderT Directory Dangerous) a ->
                  Directory ->
                  Dangerous a
 runMomentable st wfn dir = fst <$> runReaderT (runStateT wfn st) dir
-
-output :: FilePath -> String -> IO ()
-output path = writeFile (dest </> path)
-
-showFiles :: Directory -> IO ()
-showFiles = mapM_ print . sort . allRefs

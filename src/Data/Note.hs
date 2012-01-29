@@ -1,4 +1,7 @@
 module Data.Note where
+import Control.Appearance ( Appearance )
+import Data.Utils
+import Control.Arrow
 import Control.Applicative hiding ( (<|>) )
 import Data.Set ( fromList )
 import Control.DateTime.Moment
@@ -8,7 +11,7 @@ import Data.List
 import Data.Record ( Record )
 import Text.Point ( Point )
 import Text.Tag ( tag )
-import Control.Modifier ( Modifier(..), category, qualifier )
+import Control.Modifier ( Modifier(..) )
 import qualified Control.Modifier as Mods
 import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
@@ -32,15 +35,18 @@ instance Eq Note where
         ns = fromList (names x) == fromList (names y)
         qs = fromList (qualifiers x) == fromList (qualifiers y)
 
+instance Ord Note where
+    x <= y = pair x <= pair y where
+        pair = fromList . names &&& fromList . qualifiers
+
 instance Parseable Note where
-    -- TODO: disabled for testing purposes
-    -- parser = fst <$> parseNote (Mods.parse [category, qualifier])
-    parser = fst <$> parseNote (Mods.parse [category, qualifier,
-            Mods.prefix, Mods.suffix, Mods.trail
-        ])
+    parser = fst <$> parseNote Mods.catOrQual
 
 firstEvent :: (Momentable m) => Maybe Point -> Note -> m (Maybe Moment)
 firstEvent pt = Body.moment pt . body
+
+firstAppearance :: Note -> Maybe Appearance
+firstAppearance = maybeHead . Body.apps . body
 
 parseNote :: GenParser Char st Modifier -> GenParser Char st (Note, [Modifier])
 parseNote parseMods = do

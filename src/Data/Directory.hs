@@ -17,6 +17,7 @@ import Prelude hiding ( log )
 import Control.Applicative
 import Control.Dangerous hiding ( Warning )
 import Control.Dangerous.Extensions()
+-- TODO: verify necessity of SOURCEs
 import {-# SOURCE #-} Control.DateTime.Moment
 import Control.Monad.Reader hiding ( guard )
 import Control.Monad.State hiding ( State, guard )
@@ -26,7 +27,6 @@ import Data.Map ( Map )
 import Data.Maybe
 import Data.Utils
 import Data.Record ( Record )
-import Data.Tree ( Tree )
 import Text.Printf
 import Text.Reference
 import Text.Render
@@ -35,11 +35,13 @@ import Data.Trail ( Trail )
 import qualified Data.Body as Body
 import qualified Data.Map as Map
 import qualified Data.Record as Record
+import Text.Pin ( Pin )
 import Text.Pinpoint ( Pinpoint, pin, point, isSelf )
 
 data File = forall a. Record a => File a
 instance Show File where show (File f) = Record.name f
 instance Eq File where (==) = (==) `on` Record.identifier
+instance Ord File where (<=) = (<=) `on` Record.identifier
 instance Record File where
     note (File r) = Record.note r
     dawn (File r) = Record.dawn r
@@ -57,7 +59,7 @@ instance Momentable (StateT State (ReaderT Directory Dangerous))
 
 data Directory = Dir { listing :: [File]
                      , eras    :: Map String (Direction, File)
-                     , places  :: Maybe (Tree File) }
+                     , places  :: Map File Pin }
 
 
 -- Directory building
@@ -92,7 +94,6 @@ pinpoint p = cachedMoment p create where
     forceMaybe Nothing = warn (Unknown p) *> pure present
     forceMaybe (Just x) = pure x
 
--- TODO: link needs its parameters switched
 location :: (Momentable m) => Pinpoint -> m String
 location p = cachedLocation p create where
     create = find "" (pure . anchor) p

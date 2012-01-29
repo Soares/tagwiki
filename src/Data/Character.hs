@@ -14,7 +14,7 @@ import Text.ParserCombinators.Parsec
 import Data.Record hiding ( tags )
 
 -- TODO: why is 'Anakara' under 'Rose'?
-newtype Character = Character { base :: Note } deriving Eq
+newtype Character = Character { base :: Note } deriving (Eq, Ord)
 
 instance Record Character where
     note = base
@@ -22,10 +22,7 @@ instance Record Character where
 
 instance Parseable Character where
     parser = do
-        -- TODO: remove trails
-        -- let mods = Mods.parse [category, qualifier, prefix, suffix]
-        let mods = Mods.parse [category, qualifier, prefix, suffix, trail]
-        (n, ms) <- parseNote mods
+        (n, ms) <- parseNote Mods.anyMod
         let ps = prefixes ms
         let ss = suffixes ms
         pure Character{base = updateNote ps ss n}

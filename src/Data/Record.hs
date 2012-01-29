@@ -15,7 +15,7 @@ import {-# SOURCE #-} qualified Data.Note as Note
 import {-# SOURCE #-} Data.Note ( Note )
 import Text.Pin ( Pin )
 
-class (Eq a) => Record a where
+class (Eq a, Ord a) => Record a where
     note :: a -> Note
 
     alter :: a -> Directory -> Directory
