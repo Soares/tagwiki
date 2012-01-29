@@ -47,5 +47,5 @@ restrictedInText = concat [oLink, oDate, "\n"]
 restrictedInMods = concat
     [category, prefix, suffix, trail, oQualifier, cQualifier, "\n"]
 restrictedInRefs = concat
-    [ oLink, cLink, halt, oQualifier, cQualifier, event, category
-    , oDate, cDate, dateRangeSep, addDate, subDate, startDate, "\n"]
+    [ oLink, cLink, halt, oQualifier, cQualifier, event, category, prefix
+    , suffix, oDate, cDate, dateRangeSep, addDate, subDate, startDate, "\n"]

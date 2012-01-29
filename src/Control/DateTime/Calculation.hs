@@ -22,8 +22,8 @@ data Calculation = Exactly Expression
 -- TODO: Pattern matching not exhaustive.
 pinpoint :: (Momentable m) => Side -> Calculation -> m Moment
 pinpoint _ (Exactly x) = moment x
-pinpoint Start (Range x _) = moment x
 pinpoint End (Range x y) = moment (x, y)
+pinpoint _ (Range x _) = moment x
 
 beginning :: (Momentable m) => Calculation -> m Moment
 beginning (Exactly x) = moment x

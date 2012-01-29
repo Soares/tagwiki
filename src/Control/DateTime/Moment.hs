@@ -14,6 +14,7 @@ import Control.Dangerous
 import Control.DateTime.Parser
 import Control.Monad
 import Control.Monad.State
+import Data.Trail
 import Data.Maybe
 import Prelude hiding ( negate )
 import Text.ParserCombinators.Parsec
@@ -61,12 +62,14 @@ neg = map $ fmap (0-)
 -- preform check here and MODIFY THE DAMN STATE
 -- Ex.: check = when . (file `elem`) <$> get <*> die
 root :: (Momentable m) => String -> m String
-root e = check *> offset e >>= maybe (pure e) (recurse . snd) where
-    -- check :: (Errorable m, MonadState [String] m) => m ()
-    check = not . (e `elem`) <$> get >>= (`unless` err)
-    err = get >>= throw . EraCycle . (e:)
-    recurse (Moment _ "") = pure e
-    recurse (Moment _ e') = root e'
+root "" = pure ""
+root e = maybe (pure "") recurse =<< offset e where
+    recurse (_, m) = do
+        trail <- get
+        modify (descendEra e)
+        new <- get
+        unless (verify new) (throw $ EraCycle $ eraTrail new)
+        root (era m) <* put trail
 
 relateable :: (Momentable m) => String -> String -> m Bool
 relateable x y = (==) <$> root x <*> root y

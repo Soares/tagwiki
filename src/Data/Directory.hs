@@ -5,12 +5,13 @@ module Data.Directory
     ( Directory(..)
     , File(..)
     , Momentable
-    , Operable
     , checkForAmbiguities
+    , maps -- TODO: remove (testing only)
     , offset
     , pinpoint
     , location
     , tags
+    , allRefs
     ) where
 import Prelude hiding ( log )
 import Control.Applicative
@@ -20,50 +21,39 @@ import {-# SOURCE #-} Control.DateTime.Moment
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Function
-import Data.List ( intercalate )
+import Data.List ( intercalate, sort )
 import Data.Map ( Map )
 import Data.Maybe
+import Data.Utils
 import Data.Record ( Record )
 import Data.Tree ( Tree )
-import Data.Utils
-import Text.Pin ( Pin )
-import Text.Point ( Point )
 import Text.Printf
 import Text.Reference
 import Text.Render
+import Data.Trail
+import Data.Cache
 import qualified Data.Body as Body
 import qualified Data.Map as Map
 import qualified Data.Record as Record
-import qualified Text.Pin as Pin
-import qualified Text.Point as Point
+import Text.Pinpoint ( Pinpoint, pin, point, isSelf )
 
 data File = forall a. Record a => File a
+instance Show File where show (File f) = Record.name f
 instance Eq File where (==) = (==) `on` Record.identifier
 instance Record File where
     note (File r) = Record.note r
     dawn (File r) = Record.dawn r
     parent (File r) = Record.parent r
+    alter (File r) = Record.alter r
 
 class ( Applicative a
       , Errorable a
       , MonadReader Directory a
-      ) => Operable a
-
-class ( Operable a
-      , MonadState [String] a
+      , MonadState Trail a
       ) => Momentable a
 
-class ( Operable a
-      , MonadState [File] a
-      ) => Restricted a
-
-instance (Operable a) => Operable (StateT [File] a)
-instance (Operable a) => Operable (StateT [String] a)
-instance (Operable a) => Restricted (StateT [File] a)
-
 -- Actual construction!
-instance Operable (ReaderT Directory Dangerous)
-instance Momentable (StateT [String] (ReaderT Directory Dangerous))
+instance Momentable (StateT Trail (StateT Cache (ReaderT Directory Dangerous)))
 
 data Directory = Dir { listing :: [File]
                      , eras    :: Map String (Direction, File)
@@ -100,68 +90,69 @@ tags = concatMap tagsForFile . listing where
 
 offset :: (Momentable m) => String -> m (Maybe (Direction, Moment))
 offset str = era . eras =<< ask where
-    era dict = maybe (pure Nothing) locate (Map.lookup str dict)
+    era dict = maybe cantFind locate (Map.lookup str dict)
     failTuple (_, Nothing) = Nothing
     failTuple (x, Just y) = Just (x, y)
     liftSnd (x, y) = (,) x <$> y
     locate (side, file) = failTuple <$> liftSnd (side, Record.dawn file)
+    cantFind = warn (NoSuchEra str) *> pure Nothing
 
-pinpoint :: (Momentable m) => Pin -> Maybe Point -> m Moment
-pinpoint pin point = operate present (getMoment . Record.contents) pin where
-    getMoment body = Body.moment point body >>= forceMoment
-    forceMoment m = fromMaybe <$> usePresent <*> pure m
-    usePresent = warn (Unknown pin point) *> pure present
+pinpoint :: (Momentable m) => Pinpoint -> m Moment
+pinpoint p = find present (getMoment . Record.contents) p where
+    getMoment body = forceMaybe =<< Body.moment (point p) body
+    forceMaybe Nothing = warn (Unknown p) *> pure present
+    forceMaybe (Just x) = pure x
 
-location :: (Operable m) => Pin -> Maybe Point -> m String
+location :: (Momentable m) => Pinpoint -> m String
 -- TODO: link needs its parameters switched
-location pin point = operate "" (pure . anchor) pin where
+-- location p = find "" (pure . anchor) p where
+location p = find "" (pure . anchor) p where
     anchor file = link (to file) (Record.name file)
-    to file = href (Point.name <$> point) (Record.identifier file)
+    to file = href (show <$> point p) (Record.identifier file)
 
-descend :: (Restricted m) => File -> m File
-descend file = (get >>= check) *> descend' *> pure file where
-    descend' = modify (file:)
-    check files = when (file `elem` files) (err files)
-    -- TODO: Add the era to the front of the era cycle, like this:
-    err files = throw $ Cycle (file:files)
+candidates :: (Momentable m) => Reference -> m [File]
+candidates ref = headOr [] . stripNull . map candsFor <$> asks maps where
+    candsFor = fromMaybe [] . Map.lookup ref
+    stripNull = filter (not . null)
 
-find :: (Restricted m) => Pin -> m (Maybe File)
-find pin = if pin == Pin.empty then current else matches >>= getFirst where
-    current = maybeHead <$> get
-    -- matches :: (Operable m) => m [File]
-    matches = matches' <$> asks maps where
-        matches' :: [Map Reference [File]] -> [File]
-        matches' = concat . matchLists
-        matchLists :: [Map Reference [File]] -> [[File]]
-        matchLists = map getMatches
-        getMatches :: Map Reference [File] -> [File]
-        getMatches = fromMaybe [] . Map.lookup ref
-        ref = fromPin pin
-    -- getFirst :: (Operable m) => [File] -> m (Maybe File)
-    getFirst [] = warn (NotFound pin) *> pure Nothing
-    getFirst (x:_) = Just <$> descend x
-
-operate :: (Operable m) => a -> (File -> m a) -> Pin -> m a
-operate x fn pin = maybe (pure x) fn =<< fst <$> runStateT (find pin) []
-
--- operate x fn pin = maybe (pure x) (fn . fst) (runStateT (find pin) [])
+find :: (Momentable m) => a -> (File -> m a) -> Pinpoint -> m a
+find x fn p | isSelf p = maybe (pure x) fn . currentFile =<< get
+            | otherwise = candidates (fromPin $ pin p) >>= doFirst where
+    doFirst [] = warn (NotFound p) *> pure x
+    doFirst (file:xs) = do
+        unless (null xs) (warn $ Ambiguous $ file : xs)
+        trail <- get
+        modify (descendRef p)
+        modify (descendFile file)
+        new <- get
+        unless (verify new) (throw $ Cycle $ refTrail new)
+        fn file <* put trail
 
 
-data Warning = NotFound Pin | Ambiguous [File] | Unknown Pin (Maybe Point)
+data Warning = NotFound Pinpoint
+             | Ambiguous [File]
+             | Unknown Pinpoint
+             | NoSuchEra String
 
 
-data Error = NotYetImplemented | Cycle [File]
+data Error = NotYetImplemented | Cycle [Pinpoint]
 
 
 instance Show Warning where
-    show (NotFound pin) = printf "Can't find '%s'" $ show pin
-    show (Unknown pin mp) = printf "Unknown moment: '%s%s'"
-        (show pin) (maybe "" (('#':) . show) mp)
-    show (Ambiguous fs) = printf "File names are ambiguous:\n%s"
+    show (NotFound p) = printf "Can't find '%s'" $ show p
+    show (Unknown p) = printf "Unknown moment: '%s'" $ show p
+    show (NoSuchEra e) = printf "No such era: %s" e
+    show (Ambiguous fs) = printf "File names are ambiguous:\n\t%s"
         (intercalate "\n\t" $ map Record.identifier fs)
 
 
 instance Show Error where
     show NotYetImplemented = "not yet implemented"
-    show (Cycle fs) = printf "references form cycle:\n%s"
-        (intercalate "\n\t" $ map Record.identifier fs)
+    show (Cycle fs) = printf "references form cycle:\n\t%s"
+        (intercalate "\n\t" $ map show fs)
+
+
+
+-- For debugging
+allRefs :: Directory -> [Reference]
+allRefs = sort . concatMap Map.keys . maps

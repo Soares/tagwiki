@@ -14,14 +14,14 @@ import qualified Text.Tag as Tag
 data Pin = Pin { tag        :: String
                , categories :: [String]
                , qualifiers :: [String]
-               } deriving Eq
+               } deriving (Eq, Ord)
 
 empty :: Pin
 empty = Pin{tag="", categories=[], qualifiers=[]}
 
 instance Parseable Pin where
     parser = do
-        name <- Tag.tag
+        name <- strip <$> Tag.tag
         mods <- many $ Mods.parse [Mods.category, Mods.qualifier]
         pure Pin{ tag = name
                 , categories = Mods.categories mods

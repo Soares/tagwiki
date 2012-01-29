@@ -2,14 +2,15 @@ module Text.Point
     ( Point(..)
     , Side(Start, End)
     ) where
-import Control.Applicative hiding ( (<|>) )
+import Control.Applicative hiding ( (<|>), many )
+import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import qualified Text.Symbols as Y
 
 
 
-data Side = Start | End
+data Side = Start | End | Auto
           deriving (Eq, Ord)
 
 
@@ -19,23 +20,28 @@ data Point = Point { side :: Side
                    } deriving (Eq, Ord)
 
 
+-- TODO: implement synonyms for start/end
 instance Parseable Side where
-    parser = try (bang >> pure Start)
+    parser = try (bang >> pure Auto)
          <|> try (carat >> pure Start)
          <|> (dollar >> pure End) where
-        bang = designator Y.event
-        carat = designator Y.prefix
-        dollar = designator Y.suffix
+        bang = marker Y.event
+        carat = marker Y.prefix
+        dollar = marker Y.suffix
 
 
 instance Parseable Point where
-    parser = Point <$> parser <*> except Y.restrictedInRefs
+    parser = Point <$> parser <*> body where
+        body = strip <$> many (escaping Y.restrictedInRefs)
 
 
 instance Show Side where
-    show Start = "!"
+    show Auto = "!"
+    show Start = "^"
     show End = "$"
 
 
 instance Show Point where
-    show (Point n s) = show n ++ s
+    show (Point End "") = "$end"
+    show (Point _ "") = "^start"
+    show (Point s str) = show s ++ str

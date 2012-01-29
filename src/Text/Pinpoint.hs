@@ -1,30 +1,37 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pinpoint ( Pinpoint ) where
+module Text.Pinpoint ( Pinpoint(..), pin, point, isSelf ) where
 import Text.Pin
 import Text.Point
 import {-# SOURCE #-} qualified Data.Directory as Dir
-import Control.Applicative hiding ( (<|>) )
+import Control.Applicative hiding ( (<|>), empty )
 import Control.DateTime.Moment
--- TODO: relax the constraint on Dir.location ; import Control.Monad.Trans
+-- TODO: remove Pin.hs-boot and Point.hs-boot
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 
-data Pinpoint = One Pin | Both Pin Point deriving Eq
+data Pinpoint = One Pin | Both Pin Point deriving (Eq, Ord)
+
+pin :: Pinpoint -> Pin
+pin (One p) = p
+pin (Both p _) = p
+
+point :: Pinpoint -> Maybe Point
+point (One _) = Nothing
+point (Both _ p) = Just p
+
+isSelf :: Pinpoint -> Bool
+isSelf = (== empty) . pin
 
 instance Show Pinpoint where
-    show (One pin) = show pin
-    show (Both pin point) = show pin ++ " " ++ show point
+    show (One p) = show p
+    show (Both p t) = show p ++ show t
 
 instance Parseable Pinpoint where
     parser = try (Both <$> parser <*> (whitespace >> parser))
+         <|> try (Both empty <$> (whitespace >> parser))
          <|> (One <$> parser)
          <?> "pinpoint"
 
-instance Fragment Pinpoint where
-    resolve (One pin) = Dir.location pin Nothing
-    resolve (Both pin point) = Dir.location pin (Just point)
-
-instance Momentus Pinpoint where
-    moment (One pin) = Dir.pinpoint pin Nothing
-    moment (Both pin point) = Dir.pinpoint pin (Just point)
+instance Fragment Pinpoint where resolve = Dir.location
+instance Momentus Pinpoint where moment = Dir.pinpoint

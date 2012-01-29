@@ -26,7 +26,7 @@ instance Show Expression where
     show (Plus left right) = printf "%s + %s" (show left) (show right)
     show (Minus left right) = printf "%s + %s" (show left) (show right)
     show (Clobber left right) = printf "%s ⇐ %s" (show left) (show right)
-    show (From pin) = show pin
+    show (From p) = show p
     show (DateTime dt) = show dt
 
 instance Parseable Expression where

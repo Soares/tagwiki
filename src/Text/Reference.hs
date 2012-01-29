@@ -30,14 +30,8 @@ instance Eq Reference where
 
 instance Ord Reference where
     m <= s | master m && not (master s) = (s == m) || (s > m)
-    s <= m | master m && not (master s) = ns && qs && cs where
-        ns = name s `lte` name m
-        cs = categories m `hasAll` categories s
-        qs = categories m `hasAll` categories s
-    x <= y = ns && qs && cs where
-        ns = name x `lte` name y
-        cs = categories x `sameish` categories y
-        qs = qualifiers x `sameish` qualifiers y
+    s <= m | master m && not (master s) = (s == m) || name s `lte` name m
+    x <= y = (x == y) || name x `lte` name y
 
 
 lte :: String -> String -> Bool

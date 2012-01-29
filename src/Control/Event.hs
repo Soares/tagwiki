@@ -24,7 +24,8 @@ data Event = Event { name :: String
 
 -- Reducing to moment
 recognizes :: Point -> Event -> Bool
-recognizes p v = name v `like` Point.name p
+recognizes p v | null (Point.name p) = True
+               | otherwise = name v `like` Point.name p
 
 
 -- Reducing to text
@@ -38,8 +39,8 @@ instance Fragment Event where
 
 -- Parsing
 instance Parseable Event where
-    parser = marker Y.event >> (Event <$> tag <*> calc <*> block) where
-        -- TODO: add "unknown" parseable
+    parser = marker Y.event >> (Event <$> tag' <*> calc <*> block) where
+        tag' = strip <$> tag
         calc = try (Just <$> parser)
            <|> try (Just . Exactly <$> (DateTime <$> parser))
            <|> pure Nothing

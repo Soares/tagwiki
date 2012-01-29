@@ -23,6 +23,7 @@ data Modifier = Cat String
               | Qal String
               | Pre String
               | Suf String
+              -- TODO: remove trails
               | Trl String
               deriving (Eq, Show)
 

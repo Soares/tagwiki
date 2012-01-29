@@ -1,3 +1,4 @@
+-- TODO: remove this module
 module Control.DateTime.Era where
 import Control.DateTime.Offset hiding ( era )
 import Control.DateTime.Utils

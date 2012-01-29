@@ -50,10 +50,10 @@ parseNote parseMods = do
     let cs = Mods.categories mods
     b <- parser
     pure (Note{ names = ns
-             , tags = map (makeTag qs . snd) ns
-             , categories = cs
-             , qualifiers = qs
-             , body = b }, mods)
+              , tags = map (makeTag qs . snd) ns
+              , categories = cs
+              , qualifiers = qs
+              , body = b }, mods)
 
 makeTag :: [String] -> String -> String
 makeTag qs n = unwords (n:map showq (sort qs)) where

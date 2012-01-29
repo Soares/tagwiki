@@ -46,8 +46,8 @@ moment Nothing b | null $ events b = pure Nothing
 moment (Just p) b = do
     let filtered = filter (recognizes p) (events b)
     let whens = mapMaybe when filtered
-    pinpoints <- mapM (pinpoint $ side p) whens
-    return $  if null pinpoints then Nothing else Just (head pinpoints)
+    if null whens then pure Nothing
+        else Just <$> pinpoint (side p) (head whens)
 
 -- Parsing
 empty :: Body

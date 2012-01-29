@@ -18,6 +18,9 @@ import Text.Pin ( Pin )
 class (Eq a) => Record a where
     note :: a -> Note
 
+    alter :: a -> Directory -> Directory
+    alter = const id
+
     keys :: Bool -> a -> [Reference]
     keys p f = Ref.keys cs qs ns where
         cs = Note.categories $ note f
