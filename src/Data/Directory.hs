@@ -37,14 +37,16 @@ import qualified Data.Record as Record
 import {-# SOURCE #-} Control.DateTime.Moment
 import Data.File
 
+class ( MonadState State a ) => Stated a
 class ( Applicative a
       , Errorable a
       , MonadReader Directory a
-      , MonadState State a
+      , Stated a
       ) => Momentable a
 
 -- Actual construction!
 instance Momentable (StateT State (ReaderT Directory Dangerous))
+instance (Monad m) => Stated (StateT State m)
 
 data Directory = Dir { listing :: [File]
                      , eras    :: Map String (Direction, File)

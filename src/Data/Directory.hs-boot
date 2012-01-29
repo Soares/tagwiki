@@ -10,17 +10,15 @@ module Data.Directory
     ) where
 import Control.Applicative
 import Control.Monad.Reader
-import Control.Monad.State hiding ( State )
 import Control.Dangerous
+import Text.Pinpoint
 import {-# SOURCE #-} Control.DateTime.Moment ( Direction, Moment )
-import {-# SOURCE #-} Text.Pinpoint
-import {-# SOURCE #-} Data.State
 
-
+class Stated a
 class ( Applicative a
       , Errorable a
       , MonadReader Directory a
-      , MonadState State a
+      , Stated a
       ) => Momentable a
 
 data Directory
