@@ -32,10 +32,9 @@ dateRangeSep = ","
 offsetSep :: String
 offsetSep = "~"
 
-prefix, suffix, trail, priority :: String
+prefix, suffix, priority :: String
 prefix = "^"
 suffix = "$"
-trail = ","
 priority = "+"
 
 comma :: String
@@ -45,7 +44,7 @@ comma = ","
 restrictedInText, restrictedInRefs, restrictedInMods :: String
 restrictedInText = concat [oLink, oDate, "\n"]
 restrictedInMods = concat
-    [category, prefix, suffix, trail, oQualifier, cQualifier, "\n"]
+    [category, prefix, suffix, oQualifier, cQualifier, "\n"]
 restrictedInRefs = concat
     [ oLink, cLink, halt, oQualifier, cQualifier, event, category, prefix
     , suffix, oDate, cDate, dateRangeSep, addDate, subDate, startDate, "\n"]

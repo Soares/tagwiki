@@ -3,11 +3,16 @@ import Data.Directory
 import Control.Appearance
 import Text.Pinpoint
 import Control.Applicative hiding ( (<|>) )
-import Data.Note ( Note, firstAppearance )
+import Data.Note ( Note, firstAppearance, parseNote )
 import qualified Data.Map as Map
 import Text.ParserCombinators.TagWiki
+import Control.Modifier
+import qualified Control.Modifier as Mods
 import Data.Record hiding ( name )
 
+-- TODO: handle suffixes (auto-tag)
+-- TODO: handle prefixes (sizing)
+-- TODO: parent is in qualifiers
 newtype Place = Place { base :: Note } deriving (Eq, Ord)
 
 instance Record Place where
@@ -19,4 +24,6 @@ instance Record Place where
     parent = (pin . ref <$>) . firstAppearance . note
 
 instance Parseable Place where
-    parser = Place <$> parser
+    parser = do
+        (n, _) <- parseNote $ Mods.parse [category, qualifier, suffix]
+        pure Place{ base = n }
