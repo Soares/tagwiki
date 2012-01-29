@@ -23,7 +23,6 @@ instance Eq Point where
     x == y = side x == side y && name x `like` name y
 
 
--- TODO: implement synonyms for start/end
 instance Parseable Side where
     parser = try (bang >> pure Auto)
          <|> try (carat >> pure Start)

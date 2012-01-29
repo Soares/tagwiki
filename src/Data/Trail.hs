@@ -16,7 +16,6 @@ import Data.Utils
 import Data.File
 import Text.Pinpoint
 
--- TODO: make a prettier show instance
 data Trail = Trail { eraTrail  :: [String]
                    , refTrail  :: [Pinpoint]
                    , fileTrail :: [File]

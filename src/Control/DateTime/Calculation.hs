@@ -18,8 +18,6 @@ data Calculation = Exactly Expression
                  | Range Expression Expression2
                  deriving Eq
 
--- TODO: make DangerousType, add instances of warn and throw
--- TODO: Pattern matching not exhaustive.
 pinpoint :: (Momentable m) => Side -> Calculation -> m Moment
 pinpoint _ (Exactly x) = moment x
 pinpoint End (Range x y) = moment (x, y)

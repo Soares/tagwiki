@@ -14,6 +14,7 @@ import qualified Control.Modifier as Mods
 import qualified Data.Note as Note
 
 -- TODO: why is 'Anakara' under 'Rose'?
+-- TODO: why are full names in qualifiers?
 newtype Character = Character { base :: Note } deriving (Eq, Ord)
 
 instance Record Character where

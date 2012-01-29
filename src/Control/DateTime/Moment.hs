@@ -55,9 +55,6 @@ sub = zipAll $ liftM2 (-)
 neg :: [Maybe Int] -> [Maybe Int]
 neg = map $ fmap (0-)
 
--- TODO:
--- preform check here and MODIFY THE DAMN STATE
--- Ex.: check = when . (file `elem`) <$> get <*> die
 root :: (Momentable m) => String -> m String
 root "" = pure ""
 root e = maybe (pure "") recurse =<< offset e where
@@ -83,7 +80,6 @@ direct :: Direction -> [Maybe Int] -> [Maybe Int]
 direct Positive = id
 direct Negative = neg
 
--- TODO: remove absDate, relDate, and Time
 instance Parseable Moment where
     parser = try (date >>= andTime)
          <|> try date

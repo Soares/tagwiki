@@ -8,6 +8,7 @@ import Control.Event ( Event(when), recognizes )
 import Control.Unit ( section, Unit )
 import Data.List ( intercalate )
 import Data.Maybe
+import Data.Utils
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
@@ -36,18 +37,13 @@ instance Fragment Body where
 
 -- Resolution to date
 moment :: (Momentable m) => Maybe Point -> Body -> m (Maybe Moment)
--- TODO: applicify
+moment (Just p) b = doHead (pure Nothing) handle whens where
+    filtered = filter (recognizes p) (events b)
+    whens = mapMaybe when filtered
+    handle = (Just <$>) . pinpoint (side p)
 moment Nothing b | null $ events b = pure Nothing
-                 | otherwise = do
-                    let whens = mapMaybe when (events b)
-                    pinpoints <- mapM beginning whens
-                    pure $ if null pinpoints then Nothing
-                                else Just (head pinpoints)
-moment (Just p) b = do
-    let filtered = filter (recognizes p) (events b)
-    let whens = mapMaybe when filtered
-    if null whens then pure Nothing
-        else Just <$> pinpoint (side p) (head whens)
+                 | otherwise = maybeHead <$> mapM beginning whens where
+                    whens = mapMaybe when $ events b
 
 -- Parsing
 empty :: Body

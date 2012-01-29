@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Text.Pinpoint ( Pinpoint(..), pin, point, isSelf, setPin ) where
--- TODO: remove Pin.hs-boot and Point.hs-boot
 import Control.Applicative hiding ( (<|>), empty )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki

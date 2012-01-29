@@ -1,9 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.DateTime.Expression ( Expression(..), Expression2(..) ) where
--- TODO: add ways to parse moments
--- import Control.AbsDate.Time
--- import Control.DateTime.Time
--- import Control.RelDate.Time
 import {-# SOURCE #-} Data.Directory ( pinpoint )
 import Control.Applicative hiding ( (<|>) )
 import Control.DateTime.Moment ( Moment, Momentus(..), present )
@@ -34,7 +30,6 @@ instance Parseable Expression where
     parser = operations `chainl1` (whitespace >> return Clobber)
 
 instance Momentus Expression where
-    -- TODO: explore this join/bind relation
     moment (Plus x y) = join $ Moment.plus <$> moment x <*> moment y
     moment (Minus x y) = join $ Moment.minus <$> moment x <*> moment y
     moment (Clobber x y) = Moment.clobber <$> moment x <*> moment y
