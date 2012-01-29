@@ -7,25 +7,26 @@ import Control.Monad.Reader
 import Control.Monad.State hiding ( State )
 import Data.Character
 import Data.Directory
+import Data.List ( sort )
 import Data.File
 import Data.Either
 import Data.Era
-import Data.Note
+import Data.Note hiding ( makeTag, tags )
 import Data.Place
-import Data.Record
+import Data.Record hiding ( tags )
 import Data.State ( clean )
 import System.Directory
 import System.Exit
 import System.FilePath
-import Text.ParserCombinators.Parsec ( parse, ParseError, GenParser )
-import Text.ParserCombinators.TagWiki
+import Text.ParserCombinators.Parsec ( parse, ParseError )
+import Text.Printf
 import qualified Data.Map as Map
 
-wiki, src, dest, tags :: String
+wiki, src, dest, tagFile :: String
 wiki = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/"
 src = wiki ++ "src"
 dest = wiki ++ "build"
-tags = wiki ++ "tags"
+tagFile = wiki ++ "tags"
 
 main :: IO ()
 main = do
@@ -33,8 +34,13 @@ main = do
     unless ex (createDirectoryIfMissing True dest)
     fs <- locate
     let dir = createDir fs
+    let tagContents = unlines . sort . map (uncurry makeTag) $ tags dir
+    writeFile tagFile tagContents
     pairs <- execute $ runDangerous $ runMomentable clean files dir
     mapM_ (uncurry $ writeFile . (dest </>)) pairs
+
+makeTag :: FilePath -> String -> String
+makeTag fn tag = printf "%s\t%s/%s\t:/^/" tag src fn
 
 createDir :: [File] -> Directory
 createDir fs = foldr alter new fs where
@@ -50,10 +56,10 @@ locate = do
 load :: FilePath -> IO (Either ParseError File)
 load f = parse parser' f <$> readFile (src </> f) where
     parser' = case takeExtension f of
-        ".era" -> File <$> (parser :: GenParser Char st Era)
-        ".char" -> File <$> (parser :: GenParser Char st Character)
-        ".place" -> File <$> (parser :: GenParser Char st Place)
-        _ -> File <$> (parser :: GenParser Char st Note)
+        ".era" -> File <$> makeEra f
+        ".char" -> File <$> makeCharacter f
+        ".place" -> File <$> makePlace f
+        _ -> File <$> makeNote f
 
 runMomentable :: State ->
                  StateT State (ReaderT Directory Dangerous) a ->

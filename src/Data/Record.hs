@@ -21,6 +21,9 @@ class (Eq a, Ord a) => Record a where
     pin :: a -> Pin
     pin r = Note.pin (identifier r) (note r)
 
+    ref :: a -> Reference
+    ref = Ref.fromPin . pin
+
     alter :: a -> Directory -> Directory
     alter = const id
 
@@ -30,8 +33,11 @@ class (Eq a, Ord a) => Record a where
         qs = Note.qualifiers $ note f
         ns = map snd . filter ((== p) . fst) . Note.names $ note f
 
-    filename :: a -> FilePath
-    filename = slugify . identifier
+    filename :: Int -> a -> FilePath
+    filename suffix = (++ show suffix) . slugify . identifier
+
+    source :: a -> FilePath
+    source = Note.source . note
 
     contents :: a -> Body
     contents = Note.body . note

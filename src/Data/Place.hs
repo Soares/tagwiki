@@ -5,8 +5,8 @@ import Control.Modifier
 import Data.Directory
 import Data.File
 import Data.Note ( Note, firstAppearance, parseNote )
-import Data.Record hiding ( name, pin )
-import Text.ParserCombinators.TagWiki
+import Data.Record hiding ( name, pin, ref )
+import Text.ParserCombinators.Parsec ( GenParser )
 import Text.Pinpoint
 import qualified Control.Modifier as Mods
 import qualified Data.Map as Map
@@ -24,7 +24,7 @@ instance Record Place where
             updated = Map.insert (File p) r
     parent = (pin . ref <$>) . firstAppearance . note
 
-instance Parseable Place where
-    parser = do
-        (n, _) <- parseNote $ Mods.parse [category, qualifier, suffix]
-        pure Place{ base = n }
+makePlace :: FilePath -> GenParser Char st Place
+makePlace fp = do
+    (n, _) <- parseNote fp $ Mods.parse [category, qualifier, suffix]
+    pure Place{ base = n }

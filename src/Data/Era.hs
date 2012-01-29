@@ -6,7 +6,7 @@ import Data.File
 import Data.Directory
 import Data.Note ( Note, firstEvent, parseNote )
 import Data.Record hiding ( name )
-import Text.ParserCombinators.TagWiki
+import Text.ParserCombinators.Parsec ( GenParser )
 import Text.Point
 import qualified Control.Modifier as Mods
 import qualified Data.Map as Map
@@ -28,9 +28,9 @@ instance Record Era where
         pos = (,) Positive
         neg = (,) Negative
 
-instance Parseable Era where
-    parser = do
-        (n, ms) <- parseNote Mods.anyMod
-        pure Era{ base = n
-                , codes = prefixes ms
-                , precodes = suffixes ms }
+makeEra :: FilePath -> GenParser Char st Era
+makeEra fp = do
+    (n, ms) <- parseNote fp Mods.anyMod
+    pure Era{ base = n
+            , codes = prefixes ms
+            , precodes = suffixes ms }

@@ -66,7 +66,7 @@ maps dir = [build True lst, build False lst] where
 
 tags :: Directory -> [(FilePath, String)]
 tags = concatMap tagsForFile . listing where
-    tagsForFile f = map ((,) $ Record.identifier f) (Record.tags f)
+    tagsForFile f = map ((,) $ Record.source f) (Record.tags f)
 
 offset :: (Momentable m) => String -> m (Maybe (Direction, Moment))
 offset str = cachedOffset str create where
@@ -95,8 +95,8 @@ location p = cachedLocation p create where
     to file = href (show <$> point p) (Record.identifier file)
 
 candidates :: (Momentable m) => Reference -> m [File]
-candidates ref = headOr [] . stripNull . map candsFor <$> asks maps where
-    candsFor = fromMaybe [] . Map.lookup ref
+candidates k = headOr [] . stripNull . map candsFor <$> asks maps where
+    candsFor = fromMaybe [] . Map.lookup k
     stripNull = filter (not . null)
 
 find :: (Momentable m) => a -> (File -> m a) -> Pinpoint -> m a
@@ -109,8 +109,9 @@ find x fn p | isSelf p = maybe (pure x) fn =<< getFile
 
 files :: (Momentable m) => m [(FilePath, String)]
 files = ask >>= sequence . filePairs where
-    filePairs = map makePair . listing
-    makePair = fstAndLiftedSnd Record.filename Record.text
+    idxFiles dir = zip (listing dir) [0..]
+    filePairs = map makePair . idxFiles
+    makePair (f, i) = fstAndLiftedSnd (Record.filename i) Record.text f
     fstAndLiftedSnd :: (Functor f) => (z -> a) -> (z -> f b) -> z -> f (a, b)
     fstAndLiftedSnd x y z = (,) (x z) <$> y z
 

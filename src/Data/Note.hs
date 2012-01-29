@@ -21,7 +21,8 @@ import qualified Data.Record as Record
 import qualified Text.Symbols as Y
 import {-# SOURCE #-} Data.Directory ( Momentable )
 
-data Note = Note { names      :: [(Bool, String)]
+data Note = Note { source     :: FilePath
+                 , names      :: [(Bool, String)]
                  , tags       :: [String]
                  , categories :: [String]
                  , qualifiers :: [String]
@@ -43,8 +44,8 @@ instance Ord Note where
     x <= y = pair x <= pair y where
         pair = fromList . names &&& fromList . qualifiers
 
-instance Parseable Note where
-    parser = fst <$> parseNote Mods.catOrQual
+makeNote :: FilePath -> GenParser Char st Note
+makeNote fp = fst <$> parseNote fp Mods.catOrQual
 
 firstEvent :: (Momentable m) => Maybe Point -> Note -> m (Maybe Moment)
 firstEvent pt = Body.moment pt . body
@@ -52,14 +53,16 @@ firstEvent pt = Body.moment pt . body
 firstAppearance :: Note -> Maybe Appearance
 firstAppearance = maybeHead . Body.apps . body
 
-parseNote :: GenParser Char st Modifier -> GenParser Char st (Note, [Modifier])
-parseNote parseMods = do
+parseNote :: FilePath -> GenParser Char st Modifier ->
+                         GenParser Char st (Note, [Modifier])
+parseNote fp parseMods = do
     ns <- firstLine
     mods <- parseMods `manyTill` (whitespace *> eol)
     let qs = Mods.qualifiers mods
     let cs = Mods.categories mods
     b <- parser
-    pure (Note{ names = ns
+    pure (Note{ source = fp
+              , names = ns
               , tags = map (makeTag qs . snd) ns
               , categories = cs
               , qualifiers = qs

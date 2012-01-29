@@ -21,12 +21,12 @@ instance Record Character where
     note = base
     name = fromMaybe "" . maybeHead . reverse . names
 
-instance Parseable Character where
-    parser = do
-        (n, ms) <- parseNote Mods.anyMod
-        let ps = prefixes ms
-        let ss = suffixes ms
-        pure Character{base = updateNote ps ss n}
+makeCharacter :: FilePath -> GenParser Char st Character
+makeCharacter fp = do
+    (n, ms) <- parseNote fp Mods.anyMod
+    let ps = prefixes ms
+    let ss = suffixes ms
+    pure Character{base = updateNote ps ss n}
 
 updateNote :: [String] -> [String] -> Note -> Note
 updateNote ps ss n = n{ Note.names = charNames ps ss (Note.names n)
