@@ -22,9 +22,11 @@ import Data.State ( clean )
 import Text.ParserCombinators.Parsec ( parse, ParseError, GenParser )
 import Text.ParserCombinators.TagWiki
 
-src, dest :: String
-src = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/src"
-dest = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/build"
+wiki, src, dest, tags :: String
+wiki = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/"
+src = wiki ++ "src"
+dest = wiki ++ "build"
+tags = wiki ++ "tags"
 
 main :: IO ()
 main = do

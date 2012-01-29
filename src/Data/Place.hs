@@ -8,7 +8,7 @@ import qualified Data.Map as Map
 import Text.ParserCombinators.TagWiki
 import Control.Modifier
 import qualified Control.Modifier as Mods
-import Data.Record hiding ( name )
+import Data.Record hiding ( name, pin )
 
 -- TODO: handle suffixes (auto-tag)
 -- TODO: handle prefixes (sizing)

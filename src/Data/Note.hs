@@ -17,6 +17,7 @@ import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
 import Text.Printf
 import qualified Text.Symbols as Y
+import Text.Pin ( Pin(Pin) )
 import qualified Data.Record as Record
 import {-# SOURCE #-} Data.Directory ( Momentable )
 
@@ -26,6 +27,9 @@ data Note = Note { names      :: [(Bool, String)]
                  , qualifiers :: [String]
                  , body       :: Body
                  }
+
+pin :: String -> Note -> Pin
+pin s n = Pin s (categories n) (qualifiers n)
 
 instance Record Note where
     note = id

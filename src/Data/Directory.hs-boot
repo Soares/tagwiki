@@ -15,6 +15,7 @@ import Control.Dangerous
 import {-# SOURCE #-} Control.DateTime.Moment ( Direction, Moment )
 import {-# SOURCE #-} Text.Pinpoint
 import {-# SOURCE #-} Data.State
+import {-# SOURCE #-} Data.Record ( Record )
 
 
 class ( Applicative a
@@ -26,6 +27,7 @@ class ( Applicative a
 data Directory
 
 data File
+instance Record File
 instance Eq File
 instance Show File
 

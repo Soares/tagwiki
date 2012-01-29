@@ -22,6 +22,6 @@ Executable tagwiki
     directory >= 1.1.0,
     Dangerous >= 0.2.2
   Hs-Source-Dirs:   src
-  Ghc-Options:      -Wall
+  Ghc-Options:      -Wall -rtsopts
   Ghc-Prof-Options: -auto-all
   Main-Is:          Main.hs

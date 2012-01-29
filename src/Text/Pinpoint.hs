@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pinpoint ( Pinpoint(..), pin, point, isSelf ) where
+module Text.Pinpoint ( Pinpoint(..), pin, point, isSelf, setPin ) where
 import Text.Pin
 import Text.Point
 import {-# SOURCE #-} qualified Data.Directory as Dir
@@ -15,6 +15,10 @@ data Pinpoint = One Pin | Both Pin Point deriving (Eq, Ord)
 pin :: Pinpoint -> Pin
 pin (One p) = p
 pin (Both p _) = p
+
+setPin :: Pin -> Pinpoint -> Pinpoint
+setPin p (One _) = One p
+setPin p (Both _ pt) = Both p pt
 
 point :: Pinpoint -> Maybe Point
 point (One _) = Nothing

@@ -4,6 +4,7 @@ import Control.Dangerous
 import {-# SOURCE #-} Control.DateTime.Moment
 import {-# SOURCE #-} Data.Directory
 import {-# SOURCE #-} Text.Pinpoint
+import qualified Data.Record as Record
 import Control.Applicative hiding ( empty )
 import Control.Monad.State hiding ( State )
 import Data.Cache
@@ -30,6 +31,9 @@ pushRef :: (MonadState State m, Applicative m) => Pinpoint -> File -> m ()
 pushRef p f = modifyTrail (descendRef p) *> modifyTrail (descendFile f)
 popRef :: (MonadState State m, Applicative m) => m ()
 popRef = modifyTrail ascendRef *> modifyTrail ascendFile
+unSelf :: (MonadState State m, Applicative m) => Pinpoint -> m Pinpoint
+unSelf p = handle <$> getFile where
+    handle = maybe p (flip setPin p . Record.pin)
 
 guard :: (MonadState State m, Errorable m, Show e) => (Trail -> e) -> m ()
 guard err = do
@@ -51,10 +55,14 @@ send set k ma = do
 
 cachedLocation :: (MonadState State m, Applicative m) =>
     Pinpoint -> m String -> m String
-cachedLocation = cached getLocation putLocation
+cachedLocation p ma = do
+    p' <- unSelf p
+    cached getLocation putLocation p' ma
 cachedMoment :: (MonadState State m, Applicative m) =>
     Pinpoint -> m Moment -> m Moment
-cachedMoment = cached getMoment putMoment
+cachedMoment p ma = do
+    p' <- unSelf p
+    cached getMoment putMoment p' ma
 cachedOffset :: (MonadState State m, Applicative m) =>
     String -> m (Maybe (Direction, Moment)) ->
     m (Maybe (Direction, Moment))

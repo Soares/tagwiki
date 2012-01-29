@@ -18,6 +18,9 @@ import Text.Pin ( Pin )
 class (Eq a, Ord a) => Record a where
     note :: a -> Note
 
+    pin :: a -> Pin
+    pin r = Note.pin (identifier r) (note r)
+
     alter :: a -> Directory -> Directory
     alter = const id
 
