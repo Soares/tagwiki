@@ -10,12 +10,13 @@ import Text.Printf
 import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Text.Tag as Tag
+import {-# SOURCE #-} Text.Pinpoint
 
 
 -- A reference to another file and/or event
 data Pin = Pin { tag        :: String
                , categories :: [String]
-               , qualifiers :: [String]
+               , qualifiers :: [Pinpoint]
                } deriving Ord
 
 instance Eq Pin where
@@ -37,4 +38,4 @@ instance Parseable Pin where
 instance Show Pin where
     show (Pin t cs qs) = printf "%s%s%s" (strip t)
         (if null cs then "" else " #"++intercalate "#" cs)
-        (if null qs then "" else " ("++intercalate ") (" qs ++ ")")
+        (if null qs then "" else " ("++intercalate ") (" (map show qs) ++ ")")

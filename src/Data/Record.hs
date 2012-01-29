@@ -67,7 +67,8 @@ class (Eq a, Ord a) => Record a where
         hed = header $ name r
         aka = section "Pseudonyms" (list . drop 1 $ names r)
         cats = section "Categories" (list . Note.categories $ note r)
-        qals = section "Qualifiers" (list . Note.qualifiers $ note r)
+        qstrs = map show . Note.qualifiers $ note r
+        qals = section "Qualifiers" (list qstrs)
         toc = reference
             [ ("attributes", "Attributes")
             , ("appearances", "Appearances")

@@ -1,12 +1,22 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pinpoint ( Pinpoint(..), pin, point, isSelf, setPin ) where
+module Text.Pinpoint
+    ( Pinpoint(..)
+    , pin
+    , point
+    , isSelf
+    , setPin
+    , fromName ) where
 import Control.Applicative hiding ( (<|>), empty )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Pin
 import Text.Point
+import Text.Utils
 
 data Pinpoint = One Pin | Both Pin Point deriving (Eq, Ord)
+
+fromName :: String -> Pinpoint
+fromName str = One $ Pin (normalize str) [] []
 
 pin :: Pinpoint -> Pin
 pin (One p) = p

@@ -18,25 +18,26 @@ import Control.Applicative ( (<$>) )
 import Data.String.Utils
 import Text.ParserCombinators.Parsec hiding ( parse )
 import Text.ParserCombinators.TagWiki
+import {-# SOURCE #-} Text.Pinpoint
 import qualified Text.Symbols as Y
 
 data Modifier = Cat String
-              | Qal String
+              | Qal Pinpoint
               | Pre String
               | Suf String
               deriving (Eq, Show)
 
--- TODO: qualifiers need to be able to parse entire References
 parse :: [GenParser Char st Modifier] -> GenParser Char st Modifier
 parse = choice . map try
 
-partition :: [Modifier] -> ([String], [String], [String], [String])
+partition :: [Modifier] -> ([String], [Pinpoint], [String], [String])
 partition m = ( categories m
               , qualifiers m
               , prefixes   m
               , suffixes   m )
 
-categories, qualifiers, prefixes, suffixes :: [Modifier] -> [String]
+categories, prefixes, suffixes :: [Modifier] -> [String]
+qualifiers:: [Modifier] -> [Pinpoint]
 categories m = [c | Cat c <- m]
 qualifiers m = [q | Qal q <- m]
 prefixes   m = [p | Pre p <- m]
@@ -52,7 +53,7 @@ anyMod = parse [category, qualifier, prefix, suffix]
 category, qualifier, prefix, suffix :: GenParser Char st Modifier
 -- External to tags
 category = Cat . strip <$> (hash >> except restricted)
-qualifier = Qal . strip <$> between oparen cparen (except restricted)
+qualifier = Qal <$> between oparen cparen parser
 -- Internal to tags
 prefix = Pre . strip <$> (carat >> except Y.restrictedInMods)
 suffix = Suf . strip <$> (dollar >> except Y.restrictedInMods)

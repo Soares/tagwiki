@@ -2,12 +2,13 @@ module Text.Reference ( Reference, key, keys, fromPin ) where
 import Data.List ( sort )
 import Data.Set ( Set )
 import Text.Pin ( Pin(Pin) )
+import Text.Pinpoint ( Pinpoint )
 import Text.Utils ( normalize, like )
 import qualified Data.Set as Set
 
 data Reference = Ref { name       :: String
                      , categories :: Set String
-                     , qualifiers :: Set String
+                     , qualifiers :: Set Pinpoint
                      , master     :: Bool
                      }
 
@@ -22,11 +23,11 @@ instance Eq Reference where
     x == y | master x && not (master y) = ns && qs && cs where
         ns = name x `like` name y
         cs = categories x `hasAll` categories y
-        qs = qualifiers x `hasAll` qualifiers y
+        qs = qualifiers y `Set.isSubsetOf` qualifiers x
     x == y = ns && qs && cs where
         ns = name x `like` name y
         cs = categories x `sameish` categories y
-        qs = qualifiers x `sameish` qualifiers y
+        qs = qualifiers x == qualifiers y
 
 instance Ord Reference where
     m <= s | master m && not (master s) = (s == m) || (s > m)
@@ -47,8 +48,8 @@ hasAll x y = norm y `Set.isSubsetOf` norm x
 fromPin :: Pin -> Reference
 fromPin (Pin n cs qs) = Ref n (Set.fromList cs) (Set.fromList qs) False
 
-key :: [String] -> [String] -> String -> Reference
+key :: [String] -> [Pinpoint] -> String -> Reference
 key cs qs n = Ref n (Set.fromList cs) (Set.fromList qs) True
 
-keys :: [String] -> [String] -> [String] -> [Reference]
+keys :: [String] -> [Pinpoint] -> [String] -> [Reference]
 keys = (map .) . key

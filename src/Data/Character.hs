@@ -9,7 +9,7 @@ import Data.Record hiding ( tags )
 import Data.Utils
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
-import Text.Utils
+import Text.Pinpoint ( Pinpoint, fromName )
 import qualified Control.Modifier as Mods
 import qualified Data.Note as Note
 
@@ -31,8 +31,8 @@ makeCharacter fp = do
 updateNote :: [String] -> [String] -> Note -> Note
 updateNote ps ss n = n{ Note.names = charNames ps ss (Note.names n)
                       , tags = charTags ps ss (map snd $ Note.names n)
-                      , Note.qualifiers = charQuals (map snd $ Note.names n)
-                                                    (Note.qualifiers n) }
+                      , Note.qualifiers = qs } where
+    qs = charQuals (drop 1 $ map snd $ Note.names n) (Note.qualifiers n)
 
 -- The names used internatlly to match pins
 -- Will be turned into References automatically,
@@ -48,8 +48,8 @@ charNames ps ss ((priority, primaryName):ns) = primary ++ secondary where
     expand = nub . addSuffixes ss . applyPrefixes ps . splitIntoNames
 
 -- Nicknames can be qualifiers
-charQuals :: [String] -> [String] -> [String]
-charQuals ns qs = nub $ map normalize ns ++ qs
+charQuals :: [String] -> [Pinpoint] -> [Pinpoint]
+charQuals ns qs = nub $ map fromName ns ++ qs
 
 standardName :: String -> String
 standardName = unwords . splitIntoNames

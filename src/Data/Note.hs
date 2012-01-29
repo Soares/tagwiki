@@ -13,6 +13,7 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Pin ( Pin(Pin) )
 import Text.Point ( Point )
+import Text.Pinpoint ( Pinpoint )
 import Text.Printf
 import Text.Tag ( tag )
 import qualified Control.Modifier as Mods
@@ -25,7 +26,7 @@ data Note = Note { source     :: FilePath
                  , names      :: [(Bool, String)]
                  , tags       :: [String]
                  , categories :: [String]
-                 , qualifiers :: [String]
+                 , qualifiers :: [Pinpoint]
                  , body       :: Body
                  }
 
@@ -68,9 +69,9 @@ parseNote fp parseMods = do
               , qualifiers = qs
               , body = b }, mods)
 
-makeTag :: [String] -> String -> String
+makeTag :: [Pinpoint] -> String -> String
 makeTag qs n = unwords (n:map showq (sort qs)) where
-    showq = printf "(%s)"
+    showq = printf "(%s)" . show
 
 firstLine :: GenParser Char st [(Bool, String)]
 firstLine = (name `sepBy` designator Y.comma) <* eol where
