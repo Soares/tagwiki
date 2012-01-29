@@ -1,17 +1,17 @@
 module Data.Character where
-import Control.Arrow
-import Text.Utils
 import Control.Applicative hiding ( (<|>) )
-import Data.Maybe
-import Data.Utils
-import Data.Note hiding ( names )
-import qualified Data.Note as Note
-import Data.List
+import Control.Arrow
 import Control.Modifier hiding ( parse )
-import qualified Control.Modifier as Mods
-import Text.ParserCombinators.TagWiki
-import Text.ParserCombinators.Parsec
+import Data.List
+import Data.Maybe
+import Data.Note hiding ( names )
 import Data.Record hiding ( tags )
+import Data.Utils
+import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
+import Text.Utils
+import qualified Control.Modifier as Mods
+import qualified Data.Note as Note
 
 -- TODO: why is 'Anakara' under 'Rose'?
 newtype Character = Character { base :: Note } deriving (Eq, Ord)

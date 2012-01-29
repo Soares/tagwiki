@@ -1,14 +1,15 @@
 module Data.Era where
-import Data.Directory
 import Control.Applicative hiding ( (<|>) )
-import Data.Note ( Note, firstEvent, parseNote )
-import qualified Data.Map as Map
-import Text.Point
-import Control.Modifier
 import Control.DateTime.Moment
-import qualified Control.Modifier as Mods
-import Text.ParserCombinators.TagWiki
+import Control.Modifier
+import Data.File
+import Data.Directory
+import Data.Note ( Note, firstEvent, parseNote )
 import Data.Record hiding ( name )
+import Text.ParserCombinators.TagWiki
+import Text.Point
+import qualified Control.Modifier as Mods
+import qualified Data.Map as Map
 
 data Era = Era { base     :: Note
                , codes    :: [String]

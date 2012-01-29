@@ -1,14 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Text.Pin ( Pin(..), empty ) where
-import Text.Utils
 import Control.Applicative hiding ( many, (<|>), empty )
-import qualified Control.Modifier as Mods
 import Data.List hiding ( find )
+import Data.Set ( fromList )
 import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Printf
-import Data.Set ( fromList )
+import Text.Utils
+import qualified Control.Modifier as Mods
 import qualified Text.Tag as Tag
 
 

@@ -12,9 +12,9 @@ module Data.Trail
     , verify
     , home
     ) where
-import {-# SOURCE #-} Text.Pinpoint
-import {-# SOURCE #-} Data.Directory
 import Data.Utils
+import Data.File
+import Text.Pinpoint
 
 -- TODO: make a prettier show instance
 data Trail = Trail { eraTrail  :: [String]

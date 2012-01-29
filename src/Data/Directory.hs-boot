@@ -2,8 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Data.Directory
     ( Directory
-    , File
     , Momentable
+    , safeRecurseEra
     , offset
     , pinpoint
     , location
@@ -15,7 +15,6 @@ import Control.Dangerous
 import {-# SOURCE #-} Control.DateTime.Moment ( Direction, Moment )
 import {-# SOURCE #-} Text.Pinpoint
 import {-# SOURCE #-} Data.State
-import {-# SOURCE #-} Data.Record ( Record )
 
 
 class ( Applicative a
@@ -26,11 +25,7 @@ class ( Applicative a
 
 data Directory
 
-data File
-instance Record File
-instance Eq File
-instance Show File
-
 offset :: (Momentable m) => String -> m (Maybe (Direction, Moment))
 pinpoint :: (Momentable m) => Pinpoint -> m Moment
 location :: (Momentable m) => Pinpoint -> m String
+safeRecurseEra :: (Momentable m) => String -> (String -> m String) -> m String

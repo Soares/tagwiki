@@ -2,11 +2,11 @@ module Text.Point
     ( Point(..)
     , Side(Start, End)
     ) where
-import Text.Utils
 import Control.Applicative hiding ( (<|>), many )
 import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
+import Text.Utils
 import qualified Text.Symbols as Y
 
 

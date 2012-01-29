@@ -1,14 +1,15 @@
 module Data.Place where
-import Data.Directory
 import Control.Appearance
-import Text.Pinpoint
 import Control.Applicative hiding ( (<|>) )
-import Data.Note ( Note, firstAppearance, parseNote )
-import qualified Data.Map as Map
-import Text.ParserCombinators.TagWiki
 import Control.Modifier
-import qualified Control.Modifier as Mods
+import Data.Directory
+import Data.File
+import Data.Note ( Note, firstAppearance, parseNote )
 import Data.Record hiding ( name, pin )
+import Text.ParserCombinators.TagWiki
+import Text.Pinpoint
+import qualified Control.Modifier as Mods
+import qualified Data.Map as Map
 
 -- TODO: handle suffixes (auto-tag)
 -- TODO: handle prefixes (sizing)

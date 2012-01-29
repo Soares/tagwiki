@@ -1,8 +1,8 @@
 module Data.Cache where
-import {-# SOURCE #-} Control.DateTime.Moment
-import Text.Pinpoint
 import Data.Map ( Map )
+import Text.Pinpoint
 import qualified Data.Map as Map
+import {-# SOURCE #-} Control.DateTime.Moment
 
 data Cache = Cache { moments   :: Map Pinpoint Moment
                    , locations :: Map Pinpoint String

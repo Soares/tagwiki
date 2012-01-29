@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.Attribute ( Attribute(..) ) where
 import Control.Applicative ( (<$>), (<*>) )
+import Control.Unit ( Unit, block )
 import Data.String.Utils
 import Text.Fragment
-import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
 import Text.Printf
 import Text.Render
-import Control.Unit ( Unit, block )
 import qualified Text.Symbols as Y
 
 -- A key: value pair with an optional attribute block below

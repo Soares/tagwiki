@@ -1,14 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Text.Pinpoint ( Pinpoint(..), pin, point, isSelf, setPin ) where
-import Text.Pin
-import Text.Point
-import {-# SOURCE #-} qualified Data.Directory as Dir
-import Control.Applicative hiding ( (<|>), empty )
-import Control.DateTime.Moment
 -- TODO: remove Pin.hs-boot and Point.hs-boot
-import Text.Fragment
+import Control.Applicative hiding ( (<|>), empty )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
+import Text.Pin
+import Text.Point
 
 data Pinpoint = One Pin | Both Pin Point deriving (Eq, Ord)
 
@@ -36,6 +33,3 @@ instance Parseable Pinpoint where
          <|> try (Both empty <$> (whitespace >> parser))
          <|> (One <$> parser)
          <?> "pinpoint"
-
-instance Fragment Pinpoint where resolve = Dir.location
-instance Momentus Pinpoint where moment = Dir.pinpoint

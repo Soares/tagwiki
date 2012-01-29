@@ -1,5 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.DateTime.Expression ( Expression(..), Expression2(..) ) where
+-- TODO: add ways to parse moments
+-- import Control.AbsDate.Time
+-- import Control.DateTime.Time
+-- import Control.RelDate.Time
+import {-# SOURCE #-} Data.Directory ( pinpoint )
 import Control.Applicative hiding ( (<|>) )
 import Control.DateTime.Moment ( Moment, Momentus(..), present )
 import Control.Monad
@@ -8,10 +13,6 @@ import Text.ParserCombinators.TagWiki
 import Text.Pinpoint
 import Text.Printf
 import qualified Control.DateTime.Moment as Moment
--- TODO: add ways to parse moments
--- import Control.DateTime.Time
--- import Control.AbsDate.Time
--- import Control.RelDate.Time
 import qualified Text.Symbols as Y
 
 -- The means by which to resolve a date
@@ -37,7 +38,7 @@ instance Momentus Expression where
     moment (Plus x y) = join $ Moment.plus <$> moment x <*> moment y
     moment (Minus x y) = join $ Moment.minus <$> moment x <*> moment y
     moment (Clobber x y) = Moment.clobber <$> moment x <*> moment y
-    moment (From pp) = moment pp
+    moment (From pp) = pinpoint pp
     moment (DateTime dt) = moment dt
 
 

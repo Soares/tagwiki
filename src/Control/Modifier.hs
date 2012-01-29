@@ -16,8 +16,8 @@ module Control.Modifier
     ) where
 import Control.Applicative ( (<$>) )
 import Data.String.Utils
-import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec hiding ( parse )
+import Text.ParserCombinators.TagWiki
 import qualified Text.Symbols as Y
 
 data Modifier = Cat String

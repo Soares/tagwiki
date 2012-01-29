@@ -1,26 +1,25 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Main where
--- TODO: imports
--- TODO: check language extensions
 import Control.Applicative
 import Control.Dangerous
 import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State hiding ( State )
+import Data.Character
 import Data.Directory
+import Data.File
 import Data.Either
+import Data.Era
 import Data.Note
 import Data.Place
-import Data.Era
-import Data.Character
 import Data.Record
-import qualified Data.Map as Map
+import Data.State ( clean )
 import System.Directory
 import System.Exit
 import System.FilePath
-import Data.State ( clean )
 import Text.ParserCombinators.Parsec ( parse, ParseError, GenParser )
 import Text.ParserCombinators.TagWiki
+import qualified Data.Map as Map
 
 wiki, src, dest, tags :: String
 wiki = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/"

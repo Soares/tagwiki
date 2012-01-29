@@ -4,16 +4,16 @@ import Control.Applicative
 import Data.Body
 import Data.Maybe
 import Data.Utils
-import Text.Reference ( Reference )
-import qualified Text.Reference as Ref
-import Text.Render
 import Text.Fragment
+import Text.Pin ( Pin )
+import Text.Reference ( Reference )
+import Text.Render
 import Text.Utils
+import qualified Text.Reference as Ref
 import {-# SOURCE #-} Control.DateTime.Moment
 import {-# SOURCE #-} Data.Directory
-import {-# SOURCE #-} qualified Data.Note as Note
 import {-# SOURCE #-} Data.Note ( Note )
-import Text.Pin ( Pin )
+import {-# SOURCE #-} qualified Data.Note as Note
 
 class (Eq a, Ord a) => Record a where
     note :: a -> Note

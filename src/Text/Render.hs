@@ -1,6 +1,6 @@
 module Text.Render where
-import Text.Utils
 import Text.Printf
+import Text.Utils
 
 header :: String -> String
 header = printf "<h1>%s</h1>"

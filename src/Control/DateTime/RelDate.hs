@@ -1,11 +1,11 @@
 module Control.DateTime.RelDate ( RelDate, fromYear, whenever ) where
 import Control.Applicative ( (<*) )
-import Data.Functor
-import Text.ParserCombinators.TagWiki
-import Text.Printf
 import Control.DateTime.Moment
 import Control.DateTime.Parser
 import Control.DateTime.Utils
+import Data.Functor
+import Text.ParserCombinators.TagWiki
+import Text.Printf
 
 data RelDate = Rel { year  :: Maybe Int
                    , month :: Maybe Int

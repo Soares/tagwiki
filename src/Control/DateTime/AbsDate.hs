@@ -1,11 +1,11 @@
 module Control.DateTime.AbsDate ( AbsDate ) where
-import Data.Functor
 import Control.DateTime.Moment
 import Control.DateTime.Parser
+import Control.DateTime.Utils
+import Data.Functor
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Printf
-import Control.DateTime.Utils
 
 data AbsDate = Abs { year  :: Int
                    , month :: Maybe Int

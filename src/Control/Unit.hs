@@ -1,8 +1,9 @@
 {-# Language FlexibleInstances #-}
 module Control.Unit ( Unit(..), section, block ) where
+import {-# SOURCE #-} Data.Directory ( location )
 import Control.Applicative hiding ( (<|>), many )
-import Control.Monad
 import Control.DateTime.Calculation
+import Control.Monad
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
@@ -35,8 +36,8 @@ instance Parseable Unit where
 instance Fragment Unit where
     resolve (Str s) = pure s
     resolve (Dxp c) = resolve c
-    resolve (Lnk p []) = link <$> resolve p <*> pure (show p)
-    resolve (Lnk p xs) = link <$> resolve p <*> resolve xs
+    resolve (Lnk p []) = link <$> location p <*> pure (show p)
+    resolve (Lnk p xs) = link <$> location p <*> resolve xs
 
 instance Fragment [Unit] where
     resolve xs = concat <$> mapM resolve xs

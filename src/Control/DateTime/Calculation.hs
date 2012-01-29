@@ -7,9 +7,9 @@ import Control.Applicative hiding ( (<|>) )
 import Control.DateTime.Expression
 import Control.DateTime.Moment
 import Text.Fragment
-import Text.Point ( Side(..) )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
+import Text.Point ( Side(..) )
 import Text.Printf
 import qualified Text.Symbols as Y
 import {-# SOURCE #-} Data.Directory ( Momentable )

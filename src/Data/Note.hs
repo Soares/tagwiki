@@ -1,24 +1,24 @@
 module Data.Note where
 import Control.Appearance ( Appearance )
-import Data.Utils
-import Control.Arrow
 import Control.Applicative hiding ( (<|>) )
-import Data.Set ( fromList )
+import Control.Arrow
 import Control.DateTime.Moment
+import Control.Modifier ( Modifier(..) )
 import Data.Body ( Body )
-import qualified Data.Body as Body
 import Data.List
 import Data.Record ( Record )
-import Text.Point ( Point )
-import Text.Tag ( tag )
-import Control.Modifier ( Modifier(..) )
-import qualified Control.Modifier as Mods
-import Text.ParserCombinators.TagWiki
+import Data.Set ( fromList )
+import Data.Utils
 import Text.ParserCombinators.Parsec
-import Text.Printf
-import qualified Text.Symbols as Y
+import Text.ParserCombinators.TagWiki
 import Text.Pin ( Pin(Pin) )
+import Text.Point ( Point )
+import Text.Printf
+import Text.Tag ( tag )
+import qualified Control.Modifier as Mods
+import qualified Data.Body as Body
 import qualified Data.Record as Record
+import qualified Text.Symbols as Y
 import {-# SOURCE #-} Data.Directory ( Momentable )
 
 data Note = Note { names      :: [(Bool, String)]

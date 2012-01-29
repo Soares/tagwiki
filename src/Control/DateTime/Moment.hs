@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module Control.DateTime.Moment
     ( Moment
     , Direction(..)
@@ -13,13 +12,11 @@ import Control.Applicative hiding ( (<|>) )
 import Control.Dangerous
 import Control.DateTime.Parser
 import Control.Monad hiding ( guard )
-import {-# SOURCE #-} Data.State
-import {-# SOURCE #-} Data.Trail ( Trail )
 import Data.Maybe
 import Prelude hiding ( negate )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
-import {-# SOURCE #-} Data.Directory ( Momentable, offset )
+import {-# SOURCE #-} Data.Directory ( Momentable, offset, safeRecurseEra )
 
 data Moment = Moment { values :: [Maybe Int]
                      , era    :: String
@@ -64,10 +61,7 @@ neg = map $ fmap (0-)
 root :: (Momentable m) => String -> m String
 root "" = pure ""
 root e = maybe (pure "") recurse =<< offset e where
-    recurse (_, m) = do
-        pushEra e
-        guard EraCycle
-        root (era m) <* popEra
+    recurse (_, m) = safeRecurseEra (era m) root
 
 relateable :: (Momentable m) => String -> String -> m Bool
 relateable x y = (==) <$> root x <*> root y
@@ -138,9 +132,7 @@ instance Show Moment where
 class Momentus a where
     moment :: (Momentable m) => a -> m Moment
 
-data Error = NotRelateable String String
-           | EraCycle Trail
-           deriving Show
+data Error = NotRelateable String String deriving Show
 
 zipAll :: (a -> a -> a) -> [a] -> [a] -> [a]
 zipAll _ [] a = a

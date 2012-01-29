@@ -12,8 +12,8 @@ import Text.ParserCombinators.TagWiki
 import Text.Point ( Point )
 import Text.Printf
 import Text.Render
-import Text.Utils
 import Text.Tag ( tag )
+import Text.Utils
 import qualified Text.Point as Point
 import qualified Text.Symbols as Y
 

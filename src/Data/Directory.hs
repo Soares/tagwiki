@@ -3,9 +3,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Data.Directory
     ( Directory(..)
-    , File(..)
     , State
     , Momentable
+    , safeRecurseEra
     , files
     , offset
     , pinpoint
@@ -13,40 +13,29 @@ module Data.Directory
     , tags
     , allRefs
     ) where
-import Prelude hiding ( log )
 import Control.Applicative
 import Control.Dangerous hiding ( Warning )
 import Control.Dangerous.Extensions()
--- TODO: verify necessity of SOURCEs
-import {-# SOURCE #-} Control.DateTime.Moment
 import Control.Monad.Reader hiding ( guard )
 import Control.Monad.State hiding ( State, guard )
 import Data.Function
 import Data.List ( intercalate, sort )
 import Data.Map ( Map )
 import Data.Maybe
+import Data.State
+import Data.Trail ( Trail )
 import Data.Utils
-import Data.Record ( Record )
+import Prelude hiding ( log )
+import Text.Pin ( Pin )
+import Text.Pinpoint ( Pinpoint, pin, point, isSelf )
 import Text.Printf
 import Text.Reference
 import Text.Render
-import Data.State
-import Data.Trail ( Trail )
 import qualified Data.Body as Body
 import qualified Data.Map as Map
 import qualified Data.Record as Record
-import Text.Pin ( Pin )
-import Text.Pinpoint ( Pinpoint, pin, point, isSelf )
-
-data File = forall a. Record a => File a
-instance Show File where show (File f) = Record.name f
-instance Eq File where (==) = (==) `on` Record.identifier
-instance Ord File where (<=) = (<=) `on` Record.identifier
-instance Record File where
-    note (File r) = Record.note r
-    dawn (File r) = Record.dawn r
-    parent (File r) = Record.parent r
-    alter (File r) = Record.alter r
+import {-# SOURCE #-} Control.DateTime.Moment
+import Data.File
 
 class ( Applicative a
       , Errorable a
@@ -87,6 +76,9 @@ offset str = cachedOffset str create where
     locate (side, file) = failTuple <$> liftSnd (side, Record.dawn file)
     cantFind = warn (NoSuchEra str) *> pure Nothing
 
+safeRecurseEra :: (Momentable m) => String -> (String -> m String) -> m String
+safeRecurseEra e rec = pushEra e *> guard Cycle *> rec e <* popEra
+
 pinpoint :: (Momentable m) => Pinpoint -> m Moment
 pinpoint p = cachedMoment p create where
     create = find present (bodyMoment . Record.contents) p
@@ -111,9 +103,7 @@ find x fn p | isSelf p = maybe (pure x) fn =<< getFile
     doFirst [] = warn (NotFound p) *> pure x
     doFirst (file:xs) = do
         unless (null xs) (warn $ Ambiguous $ file : xs)
-        pushRef p file
-        guard Cycle
-        fn file <* popRef
+        pushRef p file *> guard Cycle *> fn file <* popRef
 
 files :: (Momentable m) => m [(FilePath, String)]
 files = ask >>= sequence . filePairs where

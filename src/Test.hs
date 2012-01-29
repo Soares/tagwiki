@@ -1,31 +1,31 @@
 module Test where
-import Main
-import Data.Utils
-import Control.Monad.Reader
-import Data.Maybe
-import Text.Reference
-import qualified Data.Map as Map
-import Data.Note
-import Text.Fragment
-import Control.Dangerous
-import Data.Directory
-import qualified Data.Directory as D
-import qualified Control.DateTime.Moment as M
-import Data.List
 import Control.Applicative
+import Control.Dangerous
 import Control.DateTime.Calculation
 import Control.DateTime.Expression
-import Text.ParserCombinators.TagWiki
-import Text.ParserCombinators.Parsec
-import Text.Utils
-import qualified Data.Record as Record
-import Text.Pin ( Pin(..) )
-import Text.Point ( Point(..), Side(..) )
-import Text.Pinpoint ( Pinpoint(..) )
-import qualified Text.Pin as Pin
-import qualified Text.Point as Point
-import qualified Text.Pinpoint as Pinpoint
+import Control.Monad.Reader
+import Data.Directory
+import Data.List
+import Data.Maybe
+import Data.Note
+import Data.Utils
 import Debug.Trace ( trace )
+import Main
+import Text.Fragment
+import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
+import Text.Pin ( Pin(..) )
+import Text.Pinpoint ( Pinpoint(..) )
+import Text.Point ( Point(..), Side(..) )
+import Text.Reference
+import Text.Utils
+import qualified Control.DateTime.Moment as M
+import qualified Data.Directory as D
+import qualified Data.Map as Map
+import qualified Data.Record as Record
+import qualified Text.Pin as Pin
+import qualified Text.Pinpoint as Pinpoint
+import qualified Text.Point as Point
 
 calcParser :: GenParser Char () Calculation
 calcParser = parser

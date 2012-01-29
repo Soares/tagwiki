@@ -1,14 +1,14 @@
 {-# Language FlexibleContexts #-}
 module Data.State where
-import Control.Dangerous
-import {-# SOURCE #-} Control.DateTime.Moment
-import {-# SOURCE #-} Data.Directory
-import {-# SOURCE #-} Text.Pinpoint
-import qualified Data.Record as Record
 import Control.Applicative hiding ( empty )
+import Control.Dangerous
 import Control.Monad.State hiding ( State )
 import Data.Cache
 import Data.Trail
+import qualified Data.Record as Record
+import {-# SOURCE #-} Control.DateTime.Moment
+import Text.Pinpoint
+import Data.File
 
 data State = State { cache :: Cache, trail :: Trail }
 

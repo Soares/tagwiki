@@ -1,6 +1,6 @@
 module Control.DateTime.Parser where
-import Text.ParserCombinators.TagWiki
 import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
 import qualified Text.Symbols as Y
 
 slash, colin, dot :: GenParser Char st ()
