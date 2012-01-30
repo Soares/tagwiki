@@ -21,6 +21,8 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Internal ( Internal(..) )
 
+-- TODO: Add timezones
+
 data Moment = Moment
     { values :: [Maybe Int]
     , era    :: String
