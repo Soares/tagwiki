@@ -17,7 +17,6 @@ import Text.ParserCombinators.TagWiki
 import Text.Pin ( Pin(..) )
 import Text.Pinpoint ( Pinpoint(..) )
 import Text.Point ( Point(..), Side(..) )
-import Text.Reference
 import Text.Utils
 import qualified Control.DateTime.Moment as M
 import qualified Data.Directory as D

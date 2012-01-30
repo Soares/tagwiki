@@ -18,6 +18,7 @@ import Control.Applicative ( (<$>) )
 import Data.String.Utils
 import Text.ParserCombinators.Parsec hiding ( parse )
 import Text.ParserCombinators.TagWiki
+import Text.Utils
 import {-# SOURCE #-} Text.Pinpoint
 import qualified Text.Symbols as Y
 
@@ -52,7 +53,7 @@ anyMod = parse [category, qualifier, prefix, suffix]
 
 category, qualifier, prefix, suffix :: GenParser Char st Modifier
 -- External to tags
-category = Cat . strip <$> (hash >> except restricted)
+category = Cat . slugify <$> (hash >> except restricted)
 qualifier = Qal <$> between oparen cparen parser
 -- Internal to tags
 prefix = Pre . strip <$> (carat >> except Y.restrictedInMods)

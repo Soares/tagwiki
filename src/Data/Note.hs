@@ -29,7 +29,7 @@ data Note = Note
     , body       :: Body
 
 -- | The names used internatlly to match pins
--- | Will be turned into References automatically
+-- | Will be turned into Pins automatically
     , names      :: [(Bool, String)]
 -- The tags to use for vim. There should be only one
 -- (or one per pseudonym); use a fuzzy selector if you

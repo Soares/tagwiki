@@ -29,7 +29,6 @@ import Prelude hiding ( log )
 import Text.Pin ( Pin )
 import Text.Pinpoint ( Pinpoint, pin, point, isSelf )
 import Text.Printf
-import Text.Reference
 import Text.Render
 import qualified Data.Body as Body
 import qualified Data.Map as Map
@@ -60,7 +59,7 @@ new wikifiles = Dir wikifiles Map.empty Map.empty
 -- Directory building
 
 -- Maps of strings on to files, in order of priority
-maps :: Directory -> [Map Reference [File]]
+maps :: Directory -> [Map Pin [File]]
 maps dir = [build True lst, build False lst] where
     lst = listing dir
     build flag = foldr (addKeys flag) Map.empty
@@ -97,7 +96,7 @@ location p = cachedLocation p create where
     anchor file = link (to file) (Record.name file)
     to file = href (show <$> point p) (Record.identifier file)
 
-candidates :: (Momentable m) => Reference -> m [File]
+candidates :: (Momentable m) => Pin -> m [File]
 candidates k = headOr [] . stripNull . map candsFor <$> asks maps where
     candsFor = fromMaybe [] . Map.lookup k
     stripNull = filter (not . null)

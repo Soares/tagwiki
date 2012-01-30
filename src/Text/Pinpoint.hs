@@ -11,12 +11,11 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Pin
 import Text.Point
-import Text.Utils
 
 data Pinpoint = One Pin | Both Pin Point deriving (Eq, Ord)
 
 fromName :: String -> Pinpoint
-fromName str = One $ Pin (normalize str) [] []
+fromName = One . simple
 
 pin :: Pinpoint -> Pin
 pin (One p) = p

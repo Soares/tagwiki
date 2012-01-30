@@ -10,7 +10,3 @@ normalize :: String -> String
 normalize x = strip $ normWhite $ map toLower x where
     normWhite str = subRegex manyWhite str " "
     manyWhite = mkRegex "[\t\n ]+"
-
-
-like :: String -> String -> Bool
-x `like` y = normalize x == normalize y
