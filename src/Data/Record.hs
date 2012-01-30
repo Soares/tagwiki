@@ -16,62 +16,71 @@ import {-# SOURCE #-} Data.Note ( Note )
 import {-# SOURCE #-} qualified Data.Note as Note
 
 class (Eq a, Ord a) => Record a where
-    note :: a -> Note
+    -- How to construct the record
+    construct :: FilePath -> Int -> a
+    
+    -- All our names
+    -- Comes with a priority level attached
+    -- Different from "refs" in that these are pretty and non-normalized.
+    -- Differetn from "tags" in that all names are present.
+    names :: a -> [Name]
 
+    -- The categories that we belong to
+    categories :: a -> [String]
+
+    -- The qualifiers we recognize
+    qualifiers :: a -> [Pinpoint]
+
+    -- The source file, needed so that we can set jump locations
+    -- for vim tags
+    source :: a -> FilePath
+
+    -- How to access the body of the record
+    body :: a -> Body
+
+    -- All the editor tags that we respond to
+    -- For  many records this will be some small subset of `names`.
+    tags :: a -> [String]
+
+    -- How to get a pin from the file
     pin :: a -> Pin
-    pin r = Note.pin (identifier r) (note r)
 
+    -- Why aren't Pin and Reference unified?
     ref :: a -> Reference
     ref = Ref.fromPin . pin
 
-    alter :: a -> Directory -> Directory
-    alter = const id
-
-    keys :: Bool -> a -> [Reference]
-    keys p f = Ref.keys cs qs ns where
+    -- All references that this record responds to
+    -- ref should be `elem` refs
+    refs :: Bool -> a -> [Reference]
+    refs p f = Ref.keys cs qs ns where
         cs = Note.categories $ note f
         qs = Note.qualifiers $ note f
         ns = map snd . filter ((== p) . fst) . Note.names $ note f
 
-    filename :: Int -> a -> FilePath
-    filename suffix = (++ show suffix) . slugify . identifier
+    -- The primary name
+    primaryName :: a -> String
+    primaryName = headOr "" . map namePart . names
 
-    source :: a -> FilePath
-    source = Note.source . note
+    -- Updates to directory maps etc.
+    alter :: a -> Directory -> Directory
+    alter = const id
 
-    contents :: a -> Body
-    contents = Note.body . note
-
-    tags :: a -> [String]
-    tags = Note.tags . note
-
-    names :: a -> [String]
-    names = map snd . Note.names . note
-
-    name :: a -> String
-    name = fromMaybe "" . maybeHead . names
-
-    identifier :: a -> String
-    identifier = normalize . name
-
-    dawn :: (Momentable m) => a -> m (Maybe Moment)
-    dawn = const $ pure Nothing
-
-    parent :: a -> Maybe Pin
-    parent = const Nothing
-
+    -- Render the record as text
     text :: (Momentable m) => a -> m String
     text r = ((top ++ "\n") ++) <$> bottom where
         top = concat [tit, hed, aka, cats, qals, toc]
-        tit = title $ name r
-        hed = header $ name r
-        aka = section "Pseudonyms" (list . drop 1 $ names r)
-        cats = section "Categories" (list . Note.categories $ note r)
-        qstrs = map show . Note.qualifiers $ note r
-        qals = section "Qualifiers" (list qstrs)
+        tit = title $ primaryName r
+        hed = header $ primaryName r
+        aka = section "Pseudonyms" (list $ drop 1 $ names r)
+        cats = section "Categories" (list $ categories r)
+        qals = section "Qualifiers" (list $ map show $ qualifiers r)
         toc = reference
             [ ("attributes", "Attributes")
             , ("appearances", "Appearances")
             , ("events", "Events")
             , ("notes", "Notes") ]
-        bottom = resolve $ contents r
+        bottom = resolve $ body r
+
+    -- A unique id; nice if it contains no spaces etc.
+    uid :: a -> String
+    uid = slugify . name
