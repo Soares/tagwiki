@@ -24,11 +24,17 @@ import {-# SOURCE #-} Data.Directory ( Momentable )
 
 data Note = Note
     { source     :: FilePath
-    , names      :: [(Bool, String)]
-    , tags       :: [String]
     , categories :: [String]
     , qualifiers :: [Pinpoint]
     , body       :: Body
+
+-- | The names used internatlly to match pins
+-- | Will be turned into References automatically
+    , names      :: [(Bool, String)]
+-- The tags to use for vim. There should be only one
+-- (or one per pseudonym); use a fuzzy selector if you
+-- want more flexibility.
+    , tags       :: [String]
     }
 
 pin :: String -> Note -> Pin

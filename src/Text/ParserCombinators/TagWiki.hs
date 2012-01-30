@@ -10,6 +10,12 @@ class Parseable a where
 number :: GenParser Char st Int
 number = read <$> many1 digit
 
+real :: (RealFrac r, Read r) => GenParser Char st r
+real = read <$> str where
+    str = (++) <$> int <*> option "" decimal
+    decimal = char '.' *> int
+    int = many1 digit
+
 -- Parses zero or more digits, returning an Int if there were any digits
 maybeInt :: GenParser Char st (Maybe Int)
 maybeInt = many digit >>= \nums -> return $ case nums of

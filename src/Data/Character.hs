@@ -1,11 +1,11 @@
 module Data.Character where
 import Control.Applicative hiding ( (<|>) )
-import Control.Arrow
-import Control.Modifier hiding ( parse )
+import Control.Modifier ( prefixes, suffixes )
 import Data.List
 import Data.Maybe
 import Data.Note hiding ( names )
 import Data.Record hiding ( tags )
+import Data.String.Utils
 import Data.Utils
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
@@ -13,8 +13,6 @@ import Text.Pinpoint ( Pinpoint, fromName )
 import qualified Control.Modifier as Mods
 import qualified Data.Note as Note
 
--- TODO: why is 'Anakara' under 'Rose'?
--- TODO: why are full names in qualifiers?
 newtype Character = Character { base :: Note } deriving (Eq, Ord)
 
 instance Record Character where
@@ -31,41 +29,91 @@ makeCharacter fp = do
 updateNote :: [String] -> [String] -> Note -> Note
 updateNote ps ss n = n{ Note.names = charNames ps ss (Note.names n)
                       , tags = charTags ps ss (map snd $ Note.names n)
-                      , Note.qualifiers = qs } where
-    qs = charQuals (drop 1 $ map snd $ Note.names n) (Note.qualifiers n)
+                      , Note.qualifiers = Note.qualifiers n ++ qs } where
+    qs = charQualifiers (drop 1 $ map snd $ Note.names n)
 
--- The names used internatlly to match pins
--- Will be turned into References automatically,
--- so categories and qualifiers will be taken care of.
--- Prefixes and suffixes will not.
--- The Bool denotes priority, and should be threaded through
--- to all names that inherit priority.
+
+-- | Adds prefixes and suffixes to tags.
+-- | Character names will be split on spaces, that they may be referenced
+-- | by either first or last or full names.
+-- |
+-- | If the character has multi-part names (i.e. "Van Halen"), escape the
+-- | whitespace (i.e. "Van\ Halen").
+-- |
+-- | Only the first name is so split; all following names will not be touched.
 charNames :: [String] -> [String] -> [(Bool, String)] -> [(Bool, String)]
 charNames _ _ [] = []
-charNames ps ss ((priority, primaryName):ns) = primary ++ secondary where
-    primary = [(priority, x) | x <- expand primaryName]
-    secondary = map (second standardName) ns
-    expand = nub . addSuffixes ss . applyPrefixes ps . splitIntoNames
+charNames ps ss ((pri, n):ns) = nub $ primary ++ ns where
+    expand = addSuffixes ss . applyPrefixes ps . splitIntoNames
+    primary = [(pri, x) | x <- expand n]
 
--- Nicknames can be qualifiers
-charQuals :: [String] -> [Pinpoint] -> [Pinpoint]
-charQuals ns qs = nub $ map fromName ns ++ qs
 
-standardName :: String -> String
-standardName = unwords . splitIntoNames
+-- | Updates a character to add 'nicknames' to the qualifiers.
+-- | Thus, if you have the following character:
+-- |
+-- |    Fredward Sharpe, Freddie
+-- |
+-- | He may be referenced as (for example):
+-- |
+-- |    |Fredward (Freddie) Sharpe|
+charQualifiers :: [String] -> [Pinpoint]
+charQualifiers = nub . map fromName
 
+-- | Add all suffixes to each name.
+-- | Will be separated by spaces (unless the suffix starts with a comma)
+-- | For example, given the following character:
+-- |
+-- |    Shane Cantlyn
+-- |    $Jr. $, M.D.
+-- |
+-- | Yields the following names (in addition to the un-suffixed names)
+-- |
+-- |    Shane Jr., M.D.
+-- |    Cantlyn Jr., M.D.
+-- |    Shane Cantlyn Jr., M.D.
 addSuffixes :: [String] -> [String] -> [String]
 addSuffixes [] xs = xs
-addSuffixes ss xs = xs ++ [unwords (x:ss) | x <- xs]
+addSuffixes ss xs = xs ++ [x ++ suffixString ss | x <- xs]
 
--- Assumes that informal name comes first
+
+-- | Combines a list of suffixes into one suffix, separating by space
+-- | except when the suffix starts with a comma
+suffixString :: [String] -> String
+suffixString = concatMap (prep . strip) where
+    prep [] = []
+    prep trail@(',':_) = trail
+    prep suffix = ' ':suffix
+
+
+-- | Like 'suffixString', for prefixes
+prefixString :: [String] -> String
+prefixString = concatMap (prep . strip) where
+    prep prefix = if null prefix then "" else prefix ++ " "
+
+
+-- | Applies each prefix in turn to each string in turn
+-- | If a character has multiple names, the prefixes will not be applied
+-- | to the first (assumed informal) name.
+-- |
+-- | Only one prefix is applied at a time. So the following character:
+-- |
+-- |    Shane Cantlyn
+-- |    ^Dr. ^Fr.
+-- |
+-- | Yields the following names (in addition to the un-prefixed ones)
+-- |
+-- |    Dr. Cantlyn, Fr. Cantlyn, Dr. Shane Cantlyn, Fr. Shane Cantlyn
 applyPrefixes :: [String] -> [String] -> [String]
 applyPrefixes _ [] = []
 applyPrefixes ps [x] = x : [unwords [p, x] | p <- ps]
 applyPrefixes ps (x:ys) = x : ys ++ [unwords [p, y] | p <- ps, y <- ys]
 
+
+-- | Splits a name into the names that can be tagged, which include:
+-- |
+-- |    First name, Last name, First & Last Name, All names
 splitIntoNames :: String -> [String]
-splitIntoNames str = case parseNames str of
+splitIntoNames s = let str = strip s in case parseNames str of
     [] -> [str]
     [x] -> [x]
     [x, y] -> [x, y, unwords [x, y]]
@@ -73,21 +121,25 @@ splitIntoNames str = case parseNames str of
         x = head xs
         z = last xs
 
+
+-- | Of a character's tags, the first is the "full name" and the rest
+-- | are pseudonyms. Therefore, the first of a character's tags
+-- | will have the prefixes and suffixes applied, the rest will not.
+charTags :: [String] -> [String] -> [String] -> [String]
+charTags _ _ [] = []
+charTags ps ss (n:ns) = expanded : ns where
+    expanded = prefixString ps ++ n ++ suffixString ss
+
+
+-- | Parse a name into names, respecting escaped whitespace
+-- | Return the original name on failure
 parseNames :: String -> [String]
 parseNames str = case parse namesParser str str of
-    Left _ -> [str]
-    Right ns -> ns
+                    Left _ -> [str]
+                    Right ns -> ns
 
 namesParser :: GenParser Char st [String]
 namesParser = many1 (whitespace *> nameParser <* whitespace)
 
 nameParser :: GenParser Char st String
 nameParser = except " \t\""
-
-
--- The tags to use for vim.
--- There should be only one per pseudonym, they can be found
--- fuzzily using editor tools
-charTags :: [String] -> [String] -> [String] -> [String]
-charTags ps ss = map expand where
-    expand n = unwords (ps ++ [n] ++ ss)

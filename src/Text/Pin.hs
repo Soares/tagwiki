@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Text.Pin ( Pin(..), empty ) where
 import Control.Applicative hiding ( many, (<|>), empty )
+import Data.Either
 import Data.List hiding ( find )
 import Data.Set ( fromList )
 import Data.String.Utils ( strip )
@@ -8,6 +9,7 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Printf
 import Text.Utils
+import Control.Modifier ( Modifier )
 import qualified Control.Modifier as Mods
 import qualified Text.Tag as Tag
 import {-# SOURCE #-} Text.Pinpoint
@@ -28,10 +30,17 @@ instance Eq Pin where
 empty :: Pin
 empty = Pin{tag="", categories=[], qualifiers=[]}
 
+
+pinPart :: GenParser Char st (Either String Modifier)
+pinPart = try (Left . strip <$> Tag.tag)
+      <|> (Right <$> Mods.catOrQual)
+      <?> "text, category, or qualifeir"
+
 instance Parseable Pin where
     parser = do
-        name <- strip <$> Tag.tag
-        mods <- many $ Mods.parse [Mods.category, Mods.qualifier]
+        (names, mods) <- partitionEithers <$> many pinPart
+        name <- if null names then strip <$> Tag.tag
+                              else pure $ unwords names
         pure Pin{ tag = name
                 , categories = Mods.categories mods
                 , qualifiers = Mods.qualifiers mods }
