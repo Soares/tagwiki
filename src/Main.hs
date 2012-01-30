@@ -22,11 +22,13 @@ import Text.ParserCombinators.Parsec ( parse, ParseError )
 import Text.Printf
 import qualified Data.Map as Map
 
+-- TODO: generalize this
+-- TODO: add tag-only option
 wiki, src, dest, tagFile :: String
 wiki = "/home/nate/Dropbox/Projects/LightAndAllHerColors/wiki/"
 src = wiki ++ "src"
 dest = wiki ++ "build"
-tagFile = wiki ++ "tags"
+tagFile = wiki ++ ".git/tags"
 
 main :: IO ()
 main = do
