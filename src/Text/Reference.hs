@@ -6,11 +6,12 @@ import Text.Pinpoint ( Pinpoint )
 import Text.Utils ( normalize, like )
 import qualified Data.Set as Set
 
-data Reference = Ref { name       :: String
-                     , categories :: Set String
-                     , qualifiers :: Set Pinpoint
-                     , master     :: Bool
-                     }
+data Reference = Ref
+    { name       :: String
+    , categories :: Set String
+    , qualifiers :: Set Pinpoint
+    , master     :: Bool
+    }
 
 instance Show Reference where
     show (Ref n cs qs m) = show (Pin n c q) ++ t where

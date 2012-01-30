@@ -11,10 +11,11 @@ import Text.Render
 import qualified Text.Symbols as Y
 
 -- A key: value pair with an optional attribute block below
-data Attribute = Attr { key   :: String
-                      , value :: [Unit]
-                      , text  :: [Unit] }
-                           deriving Eq
+data Attribute = Attr
+    { key   :: String
+    , value :: [Unit]
+    , text  :: [Unit]
+    } deriving Eq
 
 instance Show Attribute where
     show (Attr k v _) = printf "%s: %s" (show k) (show v)

@@ -10,7 +10,10 @@ import {-# SOURCE #-} Control.DateTime.Moment
 import Text.Pinpoint
 import Data.File
 
-data State = State { cache :: Cache, trail :: Trail }
+data State = State
+    { cache :: Cache
+    , trail :: Trail
+    }
 
 modifyCache :: (MonadState State m) => (Cache -> Cache) -> m ()
 modifyCache fn = modify $ \st -> st{cache=fn $ cache st}

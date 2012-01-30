@@ -11,10 +11,11 @@ import Text.Point
 import qualified Control.Modifier as Mods
 import qualified Data.Map as Map
 
-data Era = Era { base     :: Note
-               , codes    :: [String]
-               , precodes :: [String]
-               } deriving (Eq, Ord)
+data Era = Era
+    { base     :: Note
+    , codes    :: [String]
+    , precodes :: [String]
+    } deriving (Eq, Ord)
 
 dawnPoint :: Point
 dawnPoint = Point{side=Start, name="dawn"}

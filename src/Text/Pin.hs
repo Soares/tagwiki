@@ -14,10 +14,11 @@ import {-# SOURCE #-} Text.Pinpoint
 
 
 -- A reference to another file and/or event
-data Pin = Pin { tag        :: String
-               , categories :: [String]
-               , qualifiers :: [Pinpoint]
-               } deriving Ord
+data Pin = Pin
+    { tag        :: String
+    , categories :: [String]
+    , qualifiers :: [Pinpoint]
+    } deriving Ord
 
 instance Eq Pin where
     x == y = tag x `like` tag y && cs && qs where

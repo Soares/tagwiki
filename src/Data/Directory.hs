@@ -5,13 +5,13 @@ module Data.Directory
     ( Directory(..)
     , State
     , Momentable
+    , new
     , safeRecurseEra
     , files
     , offset
     , pinpoint
     , location
     , tags
-    , allRefs
     ) where
 import Control.Applicative
 import Control.Dangerous hiding ( Warning )
@@ -19,7 +19,7 @@ import Control.Dangerous.Extensions()
 import Control.Monad.Reader hiding ( guard )
 import Control.Monad.State hiding ( State, guard )
 import Data.Function
-import Data.List ( intercalate, sort )
+import Data.List ( intercalate )
 import Data.Map ( Map )
 import Data.Maybe
 import Data.State
@@ -48,10 +48,14 @@ class ( Applicative a
 instance Momentable (StateT State (ReaderT Directory Dangerous))
 instance (Monad m) => Stated (StateT State m)
 
-data Directory = Dir { listing :: [File]
-                     , eras    :: Map String (Direction, File)
-                     , places  :: Map File Pin }
+data Directory = Dir
+    { listing :: [File]
+    , eras    :: Map String (Direction, File)
+    , places  :: Map File Pin
+    }
 
+new :: [File] -> Directory
+new wikifiles = Dir wikifiles Map.empty Map.empty
 
 -- Directory building
 
@@ -62,7 +66,6 @@ maps dir = [build True lst, build False lst] where
     build flag = foldr (addKeys flag) Map.empty
     addKeys flag file dict = foldr (addKey file) dict (Record.keys flag file)
     addKey file r = Map.insertWith (++) r [file]
-
 
 tags :: Directory -> [(FilePath, String)]
 tags = concatMap tagsForFile . listing where
@@ -115,15 +118,14 @@ files = ask >>= sequence . filePairs where
     fstAndLiftedSnd :: (Functor f) => (z -> a) -> (z -> f b) -> z -> f (a, b)
     fstAndLiftedSnd x y z = (,) (x z) <$> y z
 
+
+-- | Error handling
+-- | (And warning handling)
+
 data Warning = NotFound Pinpoint
              | Ambiguous [File]
              | Unknown Pinpoint
              | NoSuchEra String
-
-
-data Error = NotYetImplemented | Cycle Trail
-
-
 instance Show Warning where
     show (NotFound p) = printf "Can't find '%s'" $ show p
     show (Unknown p) = printf "Unknown moment: '%s'" $ show p
@@ -132,12 +134,7 @@ instance Show Warning where
         (intercalate "\n\t" $ map Record.identifier fs)
 
 
+data Error = NotYetImplemented | Cycle Trail
 instance Show Error where
     show NotYetImplemented = "not yet implemented"
     show (Cycle trl) = printf "references form cycle:\n\t%s" (show trl)
-
-
-
--- For debugging
-allRefs :: Directory -> [Reference]
-allRefs = sort . concatMap Map.keys . maps

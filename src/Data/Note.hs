@@ -22,13 +22,14 @@ import qualified Data.Record as Record
 import qualified Text.Symbols as Y
 import {-# SOURCE #-} Data.Directory ( Momentable )
 
-data Note = Note { source     :: FilePath
-                 , names      :: [(Bool, String)]
-                 , tags       :: [String]
-                 , categories :: [String]
-                 , qualifiers :: [Pinpoint]
-                 , body       :: Body
-                 }
+data Note = Note
+    { source     :: FilePath
+    , names      :: [(Bool, String)]
+    , tags       :: [String]
+    , categories :: [String]
+    , qualifiers :: [Pinpoint]
+    , body       :: Body
+    }
 
 pin :: String -> Note -> Pin
 pin s n = Pin s (categories n) (qualifiers n)

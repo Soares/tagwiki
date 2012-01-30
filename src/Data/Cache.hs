@@ -4,10 +4,11 @@ import Text.Pinpoint
 import qualified Data.Map as Map
 import {-# SOURCE #-} Control.DateTime.Moment
 
-data Cache = Cache { moments   :: Map Pinpoint Moment
-                   , locations :: Map Pinpoint String
-                   , offsets   :: Map String (Maybe (Direction, Moment))
-                   } deriving Show
+data Cache = Cache
+    { moments   :: Map Pinpoint Moment
+    , locations :: Map Pinpoint String
+    , offsets   :: Map String (Maybe (Direction, Moment))
+    } deriving Show
 
 putMoment :: Pinpoint -> Moment -> Cache -> Cache
 putMoment k a c = c{moments=Map.insert k a $ moments c}

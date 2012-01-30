@@ -17,10 +17,11 @@ import Text.Utils
 import qualified Text.Point as Point
 import qualified Text.Symbols as Y
 
-data Event = Event { name :: String
-                   , when :: Maybe Calculation
-                   , text :: [Unit]
-                   } deriving Eq
+data Event = Event
+    { name :: String
+    , when :: Maybe Calculation
+    , text :: [Unit]
+    } deriving Eq
 
 -- Reducing to moment
 recognizes :: Point -> Event -> Bool

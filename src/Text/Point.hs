@@ -9,19 +9,15 @@ import Text.ParserCombinators.TagWiki
 import Text.Utils
 import qualified Text.Symbols as Y
 
+data Side = Start | End | Auto deriving (Eq, Ord)
 
+data Point = Point
+    { side :: Side
+    , name :: String
+    } deriving Ord
 
-data Side = Start | End | Auto
-          deriving (Eq, Ord)
-
-
-
-data Point = Point { side :: Side
-                   , name :: String
-                   } deriving Ord
 instance Eq Point where
     x == y = side x == side y && name x `like` name y
-
 
 instance Parseable Side where
     parser = try (bang >> pure Auto)
@@ -31,17 +27,14 @@ instance Parseable Side where
         carat = marker Y.prefix
         dollar = marker Y.suffix
 
-
 instance Parseable Point where
     parser = Point <$> parser <*> body where
         body = strip <$> many (escaping Y.restrictedInRefs)
-
 
 instance Show Side where
     show Auto = "!"
     show Start = "^"
     show End = "$"
-
 
 instance Show Point where
     show (Point End "") = "$end"

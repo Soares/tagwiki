@@ -16,10 +16,11 @@ import Data.Utils
 import Data.File
 import Text.Pinpoint
 
-data Trail = Trail { eraTrail  :: [String]
-                   , refTrail  :: [Pinpoint]
-                   , fileTrail :: [File]
-                   } deriving (Eq, Show)
+data Trail = Trail
+    { eraTrail  :: [String]
+    , refTrail  :: [Pinpoint]
+    , fileTrail :: [File]
+    } deriving (Eq, Show)
 
 currentEra :: Trail -> Maybe String
 currentEra = maybeHead . eraTrail

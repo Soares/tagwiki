@@ -19,11 +19,12 @@ import {-# SOURCE #-} Data.Directory ( Momentable )
 
 
 
-data Body = Body { attrs  :: [Attribute]
-                 , events :: [Event]
-                 , apps   :: [Appearance]
-                 , units  :: [Unit]
-                 } deriving Eq
+data Body = Body
+    { attrs  :: [Attribute]
+    , events :: [Event]
+    , apps   :: [Appearance]
+    , units  :: [Unit]
+    } deriving Eq
 
 instance Fragment Body where
     resolve (Body at ev ap un) = intercalate "\n\n" <$> sections where

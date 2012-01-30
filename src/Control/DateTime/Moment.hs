@@ -18,9 +18,10 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import {-# SOURCE #-} Data.Directory ( Momentable, offset, safeRecurseEra )
 
-data Moment = Moment { values :: [Maybe Int]
-                     , era    :: String
-                     } deriving Eq
+data Moment = Moment
+    { values :: [Maybe Int]
+    , era    :: String
+    } deriving Eq
 
 data Direction = Positive
                | Negative
