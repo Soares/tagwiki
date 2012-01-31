@@ -2,6 +2,7 @@ module Control.DateTime.Moment
     ( Moment
     , Direction(..)
     , Momentus(..)
+    , Offset(..)
     , present
     , plus
     , minus
@@ -13,31 +14,38 @@ import Control.Dangerous
 import Control.DateTime.Parser
 import Control.Monad hiding ( guard )
 import Data.Maybe
+import Data.Utils
 import Prelude hiding ( negate )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
-import {-# SOURCE #-} Data.Directory ( Momentable, offset, safeRecurseEra )
+import Internal ( Internal(..) )
 
 data Moment = Moment
     { values :: [Maybe Int]
     , era    :: String
     } deriving Eq
 
-data Direction = Positive
-               | Negative
-               deriving (Eq, Ord, Read, Show)
+data Direction
+    = Positive
+    | Negative
+    deriving (Eq, Ord, Read, Show)
+
+data Offset
+    = Descending Direction Moment
+    | Root
+    deriving (Eq, Show)
 
 present :: Moment
 present = Moment{values=[], era=""}
 
-plus :: (Momentable m) => Moment -> Moment -> m Moment
+plus :: (Internal m) => Moment -> Moment -> m Moment
 plus (Moment xs ex) (Moment ys ey) | null ex || null ey = pure simple
                                    | otherwise = complex where
     simple = Moment (add xs ys) (if null ey then ex else ey)
     complex = flip Moment ey <$> zs
     zs = add ys <$> rebase xs ex ey
 
-minus :: (Momentable m) => Moment -> Moment -> m Moment
+minus :: (Internal m) => Moment -> Moment -> m Moment
 minus x y = plus x (negate y)
 
 negate :: Moment -> Moment
@@ -56,15 +64,16 @@ sub = zipAll $ liftM2 (-)
 neg :: [Maybe Int] -> [Maybe Int]
 neg = map $ fmap (0-)
 
-root :: (Momentable m) => String -> m String
+root :: (Internal m) => String -> m String
 root "" = pure ""
-root e = maybe (pure "") recurse =<< offset e where
-    recurse (_, m) = safeRecurseEra (era m) root
+root e = maybe (pure "") recurse =<< lookupEraCode e where
+    recurse Root = root ""
+    recurse (Descending _ mo) = doWithEra (era mo) $ root (era mo)
 
-relateable :: (Momentable m) => String -> String -> m Bool
+relateable :: (Internal m) => String -> String -> m Bool
 relateable x y = (==) <$> root x <*> root y
 
-rebase :: (Momentable m) => [Maybe Int] -> String -> String -> m [Maybe Int]
+rebase :: (Internal m) => [Maybe Int] -> String -> String -> m [Maybe Int]
 rebase xs ex ey = check *> ys where
     check = relateable ex ey >>= (`unless` err)
     err = throw $ NotRelateable ex ey
@@ -72,10 +81,11 @@ rebase xs ex ey = check *> ys where
     xbase = Moment xs ex
     ybase = Moment [] ey
 
-normal :: (Momentable m) => Moment -> m [Maybe Int]
+normal :: (Internal m) => Moment -> m [Maybe Int]
 normal (Moment xs "") = pure xs
-normal (Moment xs e) = maybe (pure xs) recurse =<< offset e where
-    recurse (dir, o) = add (direct dir xs) <$> normal o
+normal (Moment xs e) = maybe (pure xs) recurse =<< lookupEraCode e where
+    recurse (Descending dir mo) = add (direct dir xs) <$> normal mo
+    recurse Root = normal (Moment xs "")
 
 direct :: Direction -> [Maybe Int] -> [Maybe Int]
 direct Positive = id
@@ -126,12 +136,6 @@ instance Show Moment where
         at i | i < length xs = maybe "" show (xs !! i)
              | otherwise = ""
 
-class Momentus a where
-    moment :: (Momentable m) => a -> m Moment
+class Momentus a where moment :: (Internal m) => a -> m Moment
 
 data Error = NotRelateable String String deriving Show
-
-zipAll :: (a -> a -> a) -> [a] -> [a] -> [a]
-zipAll _ [] a = a
-zipAll _ a [] = a
-zipAll f (x:xs) (y:ys) = f x y:zipAll f xs ys

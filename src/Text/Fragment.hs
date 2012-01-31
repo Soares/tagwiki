@@ -1,5 +1,5 @@
 module Text.Fragment where
-import {-# SOURCE #-} Data.Directory
+import Internal
 
 class Fragment a where
-    resolve :: (Momentable m) => a -> m String
+    resolve :: (Internal i) => a -> i String

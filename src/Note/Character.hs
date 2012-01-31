@@ -1,12 +1,12 @@
-module Data.Character where
+module Note.Character where
 import Control.Applicative hiding ( (<|>) )
 import Control.Modifier ( prefixes, suffixes )
 import Data.List
 import Data.Maybe
-import Data.Note hiding ( names )
 import Data.Record hiding ( tags )
 import Data.String.Utils
 import Data.Utils
+import Note hiding ( names )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Pinpoint ( Pinpoint, fromName )

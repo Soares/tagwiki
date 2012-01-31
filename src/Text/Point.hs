@@ -1,6 +1,7 @@
 module Text.Point
     ( Point(..)
-    , Side(Start, End)
+    , Side(Start, End, Auto)
+    , tag
     ) where
 import Control.Applicative hiding ( (<|>), many )
 import Data.String.Utils ( strip )
@@ -14,10 +15,16 @@ data Side = Start | End | Auto deriving (Eq, Ord)
 data Point = Point
     { side :: Side
     , name :: String
-    } deriving Ord
+    }
+
+tag :: Point -> String
+tag = normalize . name
 
 instance Eq Point where
-    x == y = side x == side y && name x `like` name y
+    x == y = side x == side y && tag x == tag y
+
+instance Ord Point where
+    x <= y = side x <= side y && tag x <= tag y
 
 instance Parseable Side where
     parser = try (bang >> pure Auto)

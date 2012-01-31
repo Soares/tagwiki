@@ -1,43 +1,26 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pinpoint
-    ( Pinpoint(..)
-    , pin
-    , point
-    , isSelf
-    , setPin
-    , fromName ) where
+module Text.Pinpoint ( Pinpoint(pin, point), fromName ) where
 import Control.Applicative hiding ( (<|>), empty )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Pin
 import Text.Point
 
-data Pinpoint = One Pin | Both Pin Point deriving (Eq, Ord)
+data Pinpoint = Pinpoint
+    { pin   :: Pin
+    , point :: Maybe Point
+    } deriving (Eq, Ord)
 
 fromName :: String -> Pinpoint
-fromName = One . simple
-
-pin :: Pinpoint -> Pin
-pin (One p) = p
-pin (Both p _) = p
-
-setPin :: Pin -> Pinpoint -> Pinpoint
-setPin p (One _) = One p
-setPin p (Both _ pt) = Both p pt
-
-point :: Pinpoint -> Maybe Point
-point (One _) = Nothing
-point (Both _ p) = Just p
-
-isSelf :: Pinpoint -> Bool
-isSelf = (== empty) . pin
+fromName str = Pinpoint (simple str) Nothing
 
 instance Show Pinpoint where
-    show (One p) = show p
-    show (Both p t) = show p ++ show t
+    show (Pinpoint p Nothing) = show p
+    show (Pinpoint p (Just pt)) = show p ++ show pt
 
 instance Parseable Pinpoint where
-    parser = try (Both <$> parser <*> (whitespace >> parser))
-         <|> try (Both empty <$> (whitespace >> parser))
-         <|> (One <$> parser)
+    parser = try (Pinpoint <$> parser <*> jpt)
+         <|> try (Pinpoint empty <$> jpt)
+         <|> (flip Pinpoint Nothing <$> parser)
          <?> "pinpoint"
+        where jpt = Just <$> (whitespace *> parser)

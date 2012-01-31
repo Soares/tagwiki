@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.Appearance ( Appearance(..) ) where
-import {-# SOURCE #-} Data.Directory ( location )
+import Internal
 import Control.Applicative ( (<$>), (<*>) )
 import Control.Unit ( Unit, block )
 import Text.Fragment

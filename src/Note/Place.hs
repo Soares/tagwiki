@@ -1,13 +1,13 @@
-module Data.Place where
+module Note.Place where
 import Control.Appearance
 import Control.Applicative hiding ( (<|>) )
 import Control.Modifier ( anyMod, prefixes, suffixes )
 import Data.Directory hiding ( tags )
 import Data.File
-import Data.Note ( Note(..), firstAppearance, parseNote )
 import Data.String.Utils ( strip )
 import Data.Utils
 import Data.Record ( Record(note, alter, parent) )
+import Note ( Note(..), firstAppearance, parseNote )
 import Text.ParserCombinators.Parsec ( GenParser, parse )
 import Text.ParserCombinators.Parsec.Error ( errorMessages, messageString )
 import Text.ParserCombinators.TagWiki

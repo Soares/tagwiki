@@ -1,21 +1,26 @@
-{-# LANGUAGE FlexibleInstances #-}
-module Data.Record where
+module Note where
+import Control.Appearance ( Appearance )
 import Control.Applicative
+import Control.DateTime.Moment ( Moment )
+import Control.Event ( at )
 import Control.Modifier ( Modifier )
 import Control.Name
-import Data.Body
+import Data.Body ( Body(apps), event )
+import Data.Function ( on )
 import Data.List ( sort )
 import Data.Utils
 import Data.Set ( Set )
+import Internal
 import Text.Fragment
 import Text.Pin ( Pin(Pin) )
+import Text.Point ( Point(side), Side(..) )
 import Text.Pinpoint ( Pinpoint )
 import Text.Printf
 import Text.Render
 import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
-import {-# SOURCE #-} Data.Directory
+-- TODO: remove Record and Record/Note.hs-boot
 
 data Basic = Basic
     { _source     :: FilePath
@@ -25,23 +30,20 @@ data Basic = Basic
     , _body       :: Body
     }
 
+instance Eq Basic where (==) = (==) `on` _uid
+instance Ord Basic where (<=) = (<=) `on` _uid
+
 
 class Note a where
     -- How to get the basic data
     basic :: a -> Basic
-
-    -- How to construct the record
-    construct :: FilePath -> Int -> a
-
-    -- Updates to directory maps etc.
-    alter :: a -> Directory -> Directory
 
     -- A unique id; nice if it contains no spaces etc.
     -- the Int in `construct` will be unique, but sometimes you just want
     -- a prettier identifier.
     uid :: a -> String
     uid r = printf "%s-%d" (slugify $ primaryName r) (_uid $ basic r)
-    
+
     -- All our names
     -- Comes with a priority level attached
     -- Different from "refs" in that these are pretty and non-normalized.
@@ -92,7 +94,7 @@ class Note a where
     primaryName = headOr "" . map namePart . names
 
     -- Render the record as text
-    text :: (Momentable m) => a -> m String
+    text :: (Internal i) => a -> i String
     text r = ((top ++ "\n") ++) <$> bottom where
         top = concat [tit, hed, aka, cats, qals, toc]
         tit = title $ primaryName r
@@ -113,6 +115,89 @@ class Note a where
 
 instance Note Basic where
     basic = id
-    -- TODO: Typechecking placeholder
-    construct s i = Basic s i [] [] (Body [] [] [] [])
-    alter = const id
+
+
+-- TODO: uneccesary (?) function
+firstEvent :: (Internal i) => Maybe Point -> Basic -> i (Maybe Moment)
+firstEvent pt n = case event pt $ body n of
+    Just ev -> at (maybe Start side pt) ev
+    Nothing -> pure Nothing
+
+
+firstAppearance :: Basic -> Maybe Appearance
+firstAppearance = maybeHead . apps . body
+
+{-
+-- ====================================================
+-- Everything below here is dead
+
+-- | The names used internatlly to match pins
+-- | Will be turned into Pins automatically
+    , names      :: [(Bool, String)]
+-- The tags to use for vim. There should be only one
+-- (or one per pseudonym); use a fuzzy selector if you
+-- want more flexibility.
+    , tags       :: [String]
+
+pin :: String -> Note -> Pin
+pin s n = Pin s (categories n) (qualifiers n)
+
+instance Record Note where
+    note = id
+
+instance Eq Note where
+    x == y = ns && qs where
+        ns = fromList (names x) == fromList (names y)
+        qs = fromList (qualifiers x) == fromList (qualifiers y)
+
+instance Ord Note where
+    x <= y = pair x <= pair y where
+        pair = fromList . names &&& fromList . qualifiers
+
+makeNote :: FilePath -> GenParser Char st Note
+makeNote fp = fst <$> parseNote fp Mods.catOrQual
+
+firstEvent :: (Momentable m) => Maybe Point -> Note -> m (Maybe Moment)
+firstEvent pt = Body.moment pt . body
+
+firstAppearance :: Note -> Maybe Appearance
+firstAppearance = maybeHead . Body.apps . body
+
+parseNote :: FilePath -> GenParser Char st Modifier ->
+                         GenParser Char st (Note, [Modifier])
+parseNote fp parseMods = do
+    ns <- firstLine
+    mods <- parseMods `manyTill` (whitespace *> eol)
+    let qs = Mods.qualifiers mods
+    let cs = Mods.categories mods
+    b <- parser
+    pure (Note{ source = fp
+              , names = ns
+              , tags = map (makeTag qs . snd) ns
+              , categories = cs
+              , qualifiers = qs
+              , body = b }, mods)
+
+makeTag :: [Pinpoint] -> String -> String
+makeTag qs n = unwords (n:map showq (sort qs)) where
+    showq = printf "(%s)" . show
+
+firstLine :: GenParser Char st [(Bool, String)]
+firstLine = (name `sepBy` designator Y.comma) <* eol where
+    name= whitespace >> (,) <$> priority <*> str where
+        priority = option False (pri >> return True)
+        escPri = hack >> pri
+        str = (++) <$> option "" escPri <*> tag
+        pri = string Y.priority
+
+
+
+--- Warnings
+data Warning = Ignored [String]
+             | Unrecognized String
+instance Show Warning where
+    show (Ignored xs) = printf
+        "Extra events ignored: [%s]" (intercalate ", " xs)
+    show (Unrecognized x) = printf
+        "Unrecognized event (resolved as !start) %s" x
+        -}

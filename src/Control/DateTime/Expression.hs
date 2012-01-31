@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Control.DateTime.Expression ( Expression(..), Expression2(..) ) where
-import {-# SOURCE #-} Data.Directory ( pinpoint )
+import Internal
 import Control.Applicative hiding ( (<|>) )
 import Control.DateTime.Moment ( Moment, Momentus(..), present )
 import Control.Monad

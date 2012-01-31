@@ -1,8 +1,5 @@
-module Control.DateTime.Calculation
-    ( Calculation(..)
-    , pinpoint
-    , beginning
-    , ending ) where
+{-# LANGUAGE FlexibleInstances #-}
+module Control.DateTime.Calculation ( Calculation(..) ) where
 import Control.Applicative hiding ( (<|>) )
 import Control.DateTime.Expression
 import Control.DateTime.Moment
@@ -11,25 +8,17 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Point ( Side(..) )
 import Text.Printf
+import qualified Control.DateTime.Moment as Moment
 import qualified Text.Symbols as Y
-import {-# SOURCE #-} Data.Directory ( Momentable )
 
 data Calculation = Exactly Expression
                  | Range Expression Expression2
                  deriving Eq
 
-pinpoint :: (Momentable m) => Side -> Calculation -> m Moment
-pinpoint _ (Exactly x) = moment x
-pinpoint End (Range x y) = moment (x, y)
-pinpoint _ (Range x _) = moment x
-
-beginning :: (Momentable m) => Calculation -> m Moment
-beginning (Exactly x) = moment x
-beginning (Range x _) = moment x
-
-ending :: (Momentable m) => Calculation -> m Moment
-ending (Exactly x) = moment x
-ending (Range x y) = moment (x, y)
+instance Momentus (Side, Calculation) where
+    moment (End, Range x y) = moment (x, y)
+    moment (_, Range x _) = moment x
+    moment (_, Exactly x) = moment x
 
 instance Show Calculation where
     show (Exactly calc) = printf "{%s}" (show calc)

@@ -16,3 +16,8 @@ firstJust :: [Maybe a] -> Maybe a
 firstJust (Nothing:xs) = firstJust xs
 firstJust (Just x:_) = Just x
 firstJust [] = Nothing
+
+zipAll :: (a -> a -> a) -> [a] -> [a] -> [a]
+zipAll _ [] a = a
+zipAll _ a [] = a
+zipAll f (x:xs) (y:ys) = f x y:zipAll f xs ys

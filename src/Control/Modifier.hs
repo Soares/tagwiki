@@ -19,6 +19,7 @@ import Data.String.Utils
 import Text.ParserCombinators.Parsec hiding ( parse )
 import Text.ParserCombinators.TagWiki
 import Text.Utils
+-- TODO: I think that qualifiers should just be pins.
 import {-# SOURCE #-} Text.Pinpoint
 import qualified Text.Symbols as Y
 

@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pin ( Pin(..), tag, empty, simple ) where
+module Text.Pin ( Pin(..), tag, empty, simple, isSelf ) where
 import Control.Applicative hiding ( many, (<|>), empty )
 import Data.Either
 import Data.List hiding ( find )
@@ -17,19 +17,22 @@ import {-# SOURCE #-} Text.Pinpoint
 
 -- A reference to another file and/or event
 data Pin = Pin
-    { text       :: String      -- The original text, for display
-    , categories :: Set String
+    { categories :: Set String
     , qualifiers :: Set Pinpoint
+    , text       :: String      -- The original text, for display
     }
 
 tag :: Pin -> String            -- The normalized text, for checking equality
 tag = slugify . text
 
 empty :: Pin
-empty = Pin "" Set.empty Set.empty
+empty = simple ""
 
 simple :: String -> Pin
-simple str = empty{text=str}
+simple = Pin Set.empty Set.empty
+
+isSelf :: Pin -> Bool
+isSelf = (== empty)
 
 instance Eq Pin where
     x == y = tag x == tag y
@@ -57,7 +60,7 @@ instance Parseable Pin where
                     <?> "text, category, or qualifier"
 
 instance Show Pin where
-    show (Pin t cs qs) = printf "%s%s%s" (strip t) cstr qstr where
+    show (Pin cs qs t) = printf "%s%s%s" (strip t) cstr qstr where
         cstr = if null cs' then "" else " #" ++ intercalate " #" cs'
         qstr = if null qs' then "" else " (" ++ intercalate ") (" qs' ++ ")"
         cs' = Set.toList cs

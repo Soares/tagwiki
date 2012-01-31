@@ -1,6 +1,6 @@
 {-# Language FlexibleInstances #-}
 module Control.Unit ( Unit(..), section, block ) where
-import {-# SOURCE #-} Data.Directory ( location )
+import Internal
 import Control.Applicative hiding ( (<|>), many )
 import Control.DateTime.Calculation
 import Control.Monad
