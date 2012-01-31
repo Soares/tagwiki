@@ -2,6 +2,7 @@ module Note
     ( Note(..)
     , Basic(modifiers)
     , parseBasic
+    , parseNote
     , prefixes
     , suffixes
     ) where
@@ -27,7 +28,6 @@ import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
 import qualified Text.Point as Point
--- TODO: remove Record and Record/Note.hs-boot
 
 data Basic = Basic
     { _uid        :: Int
@@ -137,6 +137,9 @@ class Note a where
 instance Note Basic where
     basic = id
 
+
+parseNote :: Int -> GenParser Char st Basic
+parseNote i = parseBasic i Mods.catOrQual
 
 parseBasic :: Int -> GenParser Char st (Modifier Pin) -> GenParser Char st Basic
 parseBasic i modParser = do

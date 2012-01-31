@@ -1,9 +1,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Wiki
     ( Wiki
     , new
+    , runInternal
     , record
     , recordEra
     , recordPlace
@@ -15,9 +17,10 @@ import Context hiding ( doWithEra, doWithPinpoint )
 import Control.Arrow
 import Control.Applicative
 import Control.Dangerous ( warn, Errorable )
+import Control.Dangerous.Extensions()
 import Control.DateTime.Moment
-import Control.Monad.Reader ( MonadReader, ReaderT, asks, )
-import Control.Monad.State ( StateT )
+import Control.Monad.Reader ( ReaderT(..), asks, )
+import Control.Monad.State ( StateT(..) )
 import Control.Name ( priorities )
 import Data.File ( File(File) )
 import Data.List ( intercalate, sort )
@@ -38,10 +41,14 @@ import qualified Context
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+runInternal :: StateT Context (ReaderT Wiki IO) a -> Wiki -> IO a
+runInternal fn = fmap fst . runReaderT (runStateT fn clean)
 
 -- | Operations that can poke around the directory
-instance (Errorable m, Applicative m, Monad m, MonadReader Wiki m) =>
-    Internal (StateT Context (ReaderT Wiki m)) where
+-- | TODO: relax constraints
+-- instance (Errorable m, Applicative m, Monad m, MonadReader Wiki m) =>
+  --   Internal (StateT Context (ReaderT Wiki m)) where
+instance Internal (StateT Context (ReaderT Wiki IO)) where
     doWithEra = Context.doWithEra
     doWithPinpoint = Context.doWithPinpoint
 
@@ -65,6 +72,30 @@ instance (Errorable m, Applicative m, Monad m, MonadReader Wiki m) =>
         (p, pt) = (pin &&& point) pp
         fromFile = link <$> to <*> show
         to = href (show <$> pt) . uid
+
+
+    -- | Find a pin.
+    -- | Uses the current file if the pin is empty.
+    -- |    (The context will fill empty pins for us)
+    -- | Logs warnings the first time a pin is looked up, but not subsequently:
+    -- |    Logs a warning if the pin isn't found.
+    -- |    Logs a warning if the pin is ambiguous.
+    -- TODO: relax? find :: (MonadReader Wiki c, Contextual c) => Pin -> c (Maybe File)
+    find p = cachePin p (doFirst =<< candidates) where
+        candidates = headOr [] . filter (not . null) <$> candidateLists
+        candidateLists = map dictCandidates <$> asks maps
+        dictCandidates = fromMaybe [] . Map.lookup p
+        doFirst [] = warn (NotFound p) *> pure Nothing
+        doFirst [x] = pure $ Just x
+        doFirst (x:xs) = warn (Ambiguous p $ x:xs) *> doFirst [x]
+
+
+    -- | Executes a function on each file, passing it the file uid and contents.
+    -- | Designed for i.e. (writefile . (dir </>))
+    -- TODO: relax? build :: Internal c => (FilePath -> String -> c a) -> c [a]
+    build fn = mapM (>>= uncurry fn) . filePairs =<< asks listing where
+        filePairs dict = map makePair (Map.elems dict)
+        makePair f = (,) (uid f) <$> text f
 
 
 data Wiki = Wiki
@@ -104,38 +135,12 @@ maps w = map (pinMap $ listing w) priorities where
     addKeys pri file dict = foldr (addKey file) dict (pins pri file)
     addKey file p = Map.insertWith (++) p [file]
 
-
 -- | The list of all tags for all files (sorted)
 tagList :: Wiki -> [(FilePath, String)]
 tagList = convertToList . expandToTags . listing where
     convertToList = sort . concatMap expand . Map.toList
     expandToTags = Map.map (Set.toList . tags)
     expand (filename, ts) = zip (repeat filename) ts
-
-
--- | Find a pin.
--- | Uses the current file if the pin is empty.
--- |    (The context will fill empty pins for us)
--- | Logs warnings the first time a pin is looked up, but not subsequently:
--- |    Logs a warning if the pin isn't found.
--- |    Logs a warning if the pin is ambiguous.
-find :: (MonadReader Wiki c, Contextual c) => Pin -> c (Maybe File)
-find p = cachePin p (doFirst =<< candidates) where
-    candidates = headOr [] . filter (not . null) <$> candidateLists
-    candidateLists = map dictCandidates <$> asks maps
-    dictCandidates = fromMaybe [] . Map.lookup p
-    doFirst [] = warn (NotFound p) *> pure Nothing
-    doFirst [x] = pure $ Just x
-    doFirst (x:xs) = warn (Ambiguous p $ x:xs) *> doFirst [x]
-
-
--- | Executes a function on each file, passing it the file uid and contents.
--- | Designed for i.e. (writefile . (dir </>))
-build :: (MonadReader Wiki c, Contextual c, Internal c) =>
-            (FilePath -> String -> c a) -> c [a]
-build fn = mapM (>>= uncurry fn) . filePairs =<< asks listing where
-    filePairs dict = map makePair (Map.elems dict)
-    makePair f = (,) (uid f) <$> text f
 
 
 -- | Error handling

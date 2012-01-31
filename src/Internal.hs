@@ -3,7 +3,9 @@
 module Internal where
 import Control.Applicative
 import Control.Dangerous
+import Text.Pin
 import Text.Pinpoint
+import {-# SOURCE #-} Data.File
 import {-# SOURCE #-} Control.DateTime.Moment
 
 class (Applicative i, Errorable i) => Internal i where
@@ -12,3 +14,5 @@ class (Applicative i, Errorable i) => Internal i where
     pinpoint :: Pinpoint -> i Moment
     doWithPinpoint :: Pinpoint -> i a -> i a
     location :: Pinpoint -> i String
+    find :: Pin -> i (Maybe File)
+    build :: (FilePath -> String -> i a) -> i [a]

@@ -2,28 +2,22 @@
 module Main where
 import Control.Applicative
 import Control.Dangerous hiding ( Warning )
+import Control.Dangerous.Extensions()
 import Control.Monad
 import Control.Monad.Reader
-import Control.Monad.State hiding ( State )
-import Data.Character
-import Data.Directory
 import Data.List ( sort, intercalate )
-import Data.File
-import Data.Either
-import Data.Era
 import Data.Maybe
-import Data.Note hiding ( makeTag, tags )
-import Data.Place
-import Data.Record ( Record, alter )
-import Data.State ( clean )
+import Data.Wiki
+import Note ( parseNote )
+import Note.Character
+import Note.Era
+import Note.Place
 import System.Directory
 import System.Environment
-import System.Exit
 import System.FilePath
-import Text.ParserCombinators.Parsec ( parse, ParseError )
+import Text.ParserCombinators.Parsec ( parse )
 import Text.Printf
 import System.Console.GetOpt
-
 
 data Options = Options
     { optRoot      :: FilePath
@@ -99,58 +93,48 @@ main = run =<< dangerously =<< configure <$> getProgName <*> getArgs
 run :: Options -> IO ()
 run opts = do
     let Options { optRoot      = root
-                , optBuildDir  = build
+                , optBuildDir  = bld
                 , optSourceDir = src
                 , optTagFile   = tagFile
                 } = opts
 
-    wikifiles <- locate $ root </> src
-    let dir = foldr alter (new wikifiles) wikifiles
+    files <- locate $ root </> src
+    wiki <- foldM alter new $ zip [0..] files
 
     when (isJust tagFile) $ do
         let dest = root </> fromJust tagFile
         let tupleToLine = uncurry makeTag
-        let contents = unlines . sort . map tupleToLine $ tags dir
+        let contents = unlines . sort . map tupleToLine $ tagList wiki
         writeFile dest contents
 
-    when (isJust build) $ do
-        let dest = root </> fromJust build
-        let writer = writeFile . (dest </>)
-        pairs <- dangerously $ runMomentable clean files dir
-        mapM_ (uncurry writer) pairs
+    when (isJust bld) $ do
+        let dest = root </> fromJust bld
+        let writer f txt = liftIO $ writeFile (dest </> f) txt
+        runInternal (build writer) wiki *> pure ()
 
 
 makeTag :: FilePath -> String -> String
 makeTag filename tag = printf "%s\t%s\t:/^/" tag filename
 
 
-locate :: FilePath -> IO [File]
+locate :: FilePath -> IO [(FilePath, String)]
 locate src = do
     let visible = not . (== '.') . head
     filenames <- filter visible <$> getDirectoryContents src
     let paths = map (src </>) filenames
-    (errs, wikifiles) <- partitionEithers <$> mapM load paths
-    unless (null errs) $ mapM_ print errs *> exitFailure
-    pure $ map File wikifiles
+    contents <- mapM readFile paths
+    pure $ zip filenames contents
 
 
-load :: FilePath -> IO (Either ParseError File)
-load path = parse parser path <$> readFile path where
-    parser = case takeExtension path of
-        ".era" -> File <$> makeEra path
-        ".char" -> File <$> makeCharacter path
-        ".place" -> File <$> makePlace path
-        _ -> File <$> makeNote path
-
-
--- | Unwraping database operations that can result in moments
--- | (All the piping is necessary to prevent infinite loops
--- | in date resolution.)
-runMomentable :: State ->
-                 StateT State (ReaderT Directory Dangerous) a ->
-                 Directory ->
-                 Dangerous a
-runMomentable st fn = fmap fst . runReaderT (runStateT fn st)
+alter :: Wiki -> (Int, (FilePath, String)) -> IO Wiki
+alter w (i, (path, txt)) = case takeExtension path of
+    ".era" -> load recordEra parseEra
+    ".char" -> load recordCharacter parseCharacter
+    ".place" -> load recordPlace parsePlace
+    _ -> load record parseNote
+    where load rec par = case parse (par i) path txt of
+                            Left err -> warn err *> pure w
+                            Right note -> pure $ rec w path note
 
 
 -- | Handling unexpected arguments
