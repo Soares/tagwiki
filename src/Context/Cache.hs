@@ -1,22 +1,22 @@
 module Context.Cache where
+import Context.Reference
 import Data.File
 import Data.Map ( Map )
 import Text.Pin
-import Text.Pinpoint
 import qualified Data.Map as Map
 import Control.DateTime.Moment
 
 data Cache = Cache
-    { pinpoints :: Map Pinpoint Moment
-    , pins      :: Map Pin (Maybe File)
-    , codes     :: Map String (Maybe Offset)
+    { refs  :: Map Reference Moment
+    , pins  :: Map Pin (Maybe File)
+    , codes :: Map String (Maybe Offset)
     } deriving Show
 
-putPinpoint :: Pinpoint -> Moment -> Cache -> Cache
-putPinpoint k a c = c{pinpoints=Map.insert k a $ pinpoints c}
+putRef :: Reference -> Moment -> Cache -> Cache
+putRef k a c = c{refs=Map.insert k a $ refs c}
 
-getPinpoint :: Pinpoint -> Cache -> Maybe Moment
-getPinpoint k = Map.lookup k . pinpoints
+getRef :: Reference -> Cache -> Maybe Moment
+getRef k = Map.lookup k . refs
 
 putPin :: Pin -> Maybe File -> Cache -> Cache
 putPin k a c = c{pins=Map.insert k a $ pins c}

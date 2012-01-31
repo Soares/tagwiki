@@ -5,10 +5,12 @@ import Control.Dangerous hiding ( Warning )
 import Control.Dangerous.Extensions()
 import Control.Monad
 import Control.Monad.Reader
+import Data.File
 import Data.List ( sort, intercalate )
 import Data.Maybe
 import Data.Wiki
-import Note ( parseNote )
+import Internal
+import Note ( text, parseNote )
 import Note.Character
 import Note.Era
 import Note.Place
@@ -33,7 +35,7 @@ defaultOptions = Options
     { optRoot      = "."
     , optSourceDir = "src"
     , optBuildDir  = Nothing
-    , optTagFile   = Just "tags"
+    , optTagFile   = Nothing
     , optHelp      = False
     }
 
@@ -54,12 +56,11 @@ options =
         "directory in which to place compiled files"
 
     , Option "t" ["tags"]
-        (ReqArg (\arg opt -> opt{optTagFile = Just arg}) "FILE")
+        (OptArg (\arg opt -> opt{optTagFile = case arg of
+                                                   Nothing -> Just "tags"
+                                                   Just x -> Just x
+                                }) "FILE")
         "the tag file to write to (default `tags`)"
-
-    , Option "x" ["notags"]
-        (NoArg (\opt -> opt{optTagFile = Nothing}))
-        "do not write a tag file"
 
     , Option "h" ["help"]
         (NoArg (\opt -> opt{optHelp = True}))
@@ -103,18 +104,25 @@ run opts = do
 
     when (isJust tagFile) $ do
         let dest = root </> fromJust tagFile
-        let tupleToLine = uncurry makeTag
+        let tupleToLine = uncurry (makeTag $ root </> src)
         let contents = unlines . sort . map tupleToLine $ tagList wiki
         writeFile dest contents
 
     when (isJust bld) $ do
         let dest = root </> fromJust bld
-        let writer f txt = liftIO $ writeFile (dest </> f) txt
-        runInternal (build writer) wiki *> pure ()
+        let writer = doWrite . (dest </>)
+        runInternal (build writer) wiki *> putStrLn ""
 
 
-makeTag :: FilePath -> String -> String
-makeTag filename tag = printf "%s\t%s\t:/^/" tag filename
+doWrite :: (MonadIO i, Internal i) => FilePath -> File -> i ()
+doWrite filename file = do
+    liftIO $ putStr "."
+    txt <- text file
+    liftIO $ writeFile filename txt
+
+
+makeTag :: FilePath -> FilePath -> String -> String
+makeTag src filename tag = printf "%s\t%s\t:/^/" tag (src </> filename)
 
 
 locate :: FilePath -> IO [(FilePath, String)]

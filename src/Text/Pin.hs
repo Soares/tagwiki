@@ -4,6 +4,7 @@ import Control.Applicative hiding ( many, (<|>), empty )
 import Control.Name
 import Data.Either
 import Data.List hiding ( find )
+-- TODO: rm MasterSet
 import Data.Set ( Set, fromList )
 import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec
@@ -32,7 +33,7 @@ simple :: String -> Pin
 simple = Pin Set.empty Set.empty
 
 isSelf :: Pin -> Bool
-isSelf = (== empty)
+isSelf = (== "") . text
 
 fromName :: Name -> Pin
 fromName = simple . namePart

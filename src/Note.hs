@@ -20,21 +20,23 @@ import Internal
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
-import Text.Pin ( Pin(Pin) )
+import Text.Pin ( Pin )
 import Text.Point ( Point(side) )
 import Text.Printf
 import Text.Render
 import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
+import qualified Text.Pin as Pin
 import qualified Text.Point as Point
+import qualified Text.Symbols as Y
 
 data Basic = Basic
     { _uid        :: Int
     , _names      :: [Name]
     , modifiers  :: [Modifier Pin]
     , _body       :: Body
-    }
+    } deriving Show
 
 
 -- | Helpers for people manipulating bodies in common cases
@@ -91,17 +93,12 @@ class Note a where
         qlist = sort  $ Set.toList $ qualifiers x
         nameset = Set.fromList $ names x
 
-    -- How to get a pin from the file
-    pin :: a -> Pin
-    pin r = Pin (categories r) (qualifiers r) (primaryName r)
-
-    -- All references that this record responds to
-    -- ref should be `elem` refs
-    pins :: Priority -> a -> [Pin]
-    pins p r = map (Pin cs qs) ns where
-        cs = categories r
-        qs = qualifiers r
-        ns = ofPriority p $ names r
+    -- Whether or not this file recognizes the categories and
+    -- qualifiers on a pin (assumes that it has already respoded
+    -- to the Pin.name)
+    recognizes :: Pin -> a -> Bool
+    recognizes p r = Pin.categories p `Set.isSubsetOf` categories r
+                  && Pin.qualifiers p `Set.isSubsetOf` qualifiers r
 
     -- The primary name
     primaryName :: a -> String
@@ -143,7 +140,7 @@ parseNote i = parseBasic i Mods.catOrQual
 
 parseBasic :: Int -> GenParser Char st (Modifier Pin) -> GenParser Char st Basic
 parseBasic i modParser = do
-    ns <- parser `manyTill` (whitespace *> eol)
+    ns <- (parser `sepBy` designator Y.comma) <* eol
     ms <- modParser `manyTill` (whitespace *> eol)
     b <- parser
     pure $ Basic i ns ms b

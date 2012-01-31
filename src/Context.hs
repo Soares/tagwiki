@@ -6,14 +6,11 @@ import Control.Dangerous hiding ( Warning )
 import Control.Dangerous.Extensions()
 import Control.DateTime.Moment
 import Control.Monad.State hiding ( guard )
-import Text.Pin ( Pin, isSelf )
-import Text.Pinpoint
+import Text.Pin ( Pin )
+import Text.Point ( Point )
 import Context.Cache
 import Context.Trail
 import Data.File
-{-
-import Control.DateTime.Moment
--}
 
 data Context = Context
     { cache :: Cache
@@ -31,13 +28,16 @@ class (Errorable m, MonadState Context m, Applicative m) => Contextual m where
     doWithEra :: String -> m a -> m a
     doWithEra str fn = pushEra str *> guard Cycle *> fn <* popEra
 
-    cachePinpoint :: Pinpoint -> m Moment -> m Moment
-    cachePinpoint p ma = do
-        pin' <- unSelf $ pin p
-        cached getPinpoint putPinpoint p{pin=pin'} ma
+    cacheRef :: File -> Maybe Point -> m Moment -> m Moment
+    cacheRef p pt = cached getRef putRef (p, pt)
 
-    doWithPinpoint :: Pinpoint -> m a -> m a
-    doWithPinpoint p fn = pushPP p *> guard Cycle *> fn <* popPP
+    doWithRef :: File -> Maybe Point -> m a -> m a
+    doWithRef p pt fn = pushPP p pt *> guard Cycle *> fn <* popPP
+
+    currentFile :: m (Maybe File)
+    currentFile = maybe (pure Nothing) justFile =<< ref where
+        justFile = pure . Just . fst
+        ref = gets $ currentRef . trail
 
     cachePin :: Pin -> m (Maybe File) -> m (Maybe File)
     cachePin = cached getPin putPin
@@ -77,18 +77,10 @@ popEra = modifyTrail ascendEra
 
 
 -- | Pinpoint recursion helpers
-pushPP :: (Contextual m) => Pinpoint -> m ()
-pushPP p = modifyTrail $ descendPinpoint p
+pushPP :: (Contextual m) => File -> Maybe Point -> m ()
+pushPP p pt = modifyTrail $ descendRef (p, pt)
 popPP :: (Contextual m) => m ()
-popPP = modifyTrail ascendPinpoint
-
-
--- | Pin helpers
-unSelf :: (Contextual m) => Pin -> m Pin
-unSelf p | isSelf p = use =<< gets (currentPinpoint . trail)
-         | otherwise = pure p where
-    use Nothing = warn (CantUnself p) *> pure p
-    use (Just pp) = pure $ pin pp
+popPP = modifyTrail ascendRef
 
 
 data Error = Cycle Trail

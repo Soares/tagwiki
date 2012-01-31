@@ -5,7 +5,7 @@ import Control.Name
 import Data.Body
 import Data.String.Utils ( strip )
 import Data.Utils
-import Note hiding ( pin )
+import Note
 import Text.ParserCombinators.Parsec ( GenParser, parse )
 import Text.ParserCombinators.Parsec.Error ( errorMessages, messageString )
 import Text.ParserCombinators.TagWiki
@@ -19,7 +19,7 @@ import qualified Data.Set as Set
 data Place = Place
     { base :: Basic
     , size :: Double
-    } deriving (Eq, Ord)
+    } deriving (Eq, Ord, Show)
 
 parent :: Place -> Maybe Pin
 parent = fmap (pin . ref) . maybeHead . apps . body

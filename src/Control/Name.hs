@@ -12,7 +12,7 @@ high = Pri 0
 low = Pri 10
 
 priorities :: [Priority]
-priorities = [low, high]
+priorities = [high, low]
 
 inflate :: (String -> [String]) -> Name -> [Name]
 inflate fn (Name pri n) = zipWith Name (repeat pri) (fn n)
@@ -32,3 +32,10 @@ instance Parseable Name where
     parser = whitespace *> (Name <$> parser <*> str) where
         str = (++) <$> option "" escPri <*> tag
         escPri = hack *> string Y.priority
+
+instance Show Priority where
+    show (Pri 0) = "(+)"
+    show (Pri _) = "(-)"
+
+instance Show Name where
+    show (Name pri n) = n ++ " " ++ show pri

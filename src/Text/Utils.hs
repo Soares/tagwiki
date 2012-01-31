@@ -4,8 +4,8 @@ import Data.String.Utils ( strip )
 import Text.Regex
 
 slugify :: String -> String
-slugify str = subRegex invalid str " " where
-    invalid = mkRegex "[^-_\\w]"
+slugify str = subRegex invalid (normalize str) "-" where
+    invalid = mkRegex "[^-_0-9a-zA-Z]+"
 
 normalize :: String -> String
 normalize x = strip $ normWhite $ map toLower x where

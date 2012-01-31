@@ -4,6 +4,7 @@ import Control.Applicative hiding ( (<|>) )
 import Control.Name
 import Data.List
 import Data.String.Utils
+import Data.Utils
 import Note
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
@@ -11,7 +12,7 @@ import Text.Pin ( fromName )
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
 
-newtype Character = Character { base :: Basic } deriving (Eq, Ord)
+newtype Character = Character { base :: Basic } deriving (Eq, Ord, Show)
 
 
 instance Note Character where
@@ -31,7 +32,10 @@ instance Note Character where
         alter (Name pri n:ns) = nub $ [Name pri x | x <- expand n] ++ ns
         alter [] = []
 
-    -- tags = ...
+-- | The primary name is the prefixed and suffixed full name
+    primaryName c = doHead "" expand $ map namePart $ names $ basic c where
+        expand n = prefixString (prefixes c) ++ n ++ suffixString (suffixes c)
+
 -- | Updates a character to add 'nicknames' to the qualifiers.
 -- | Thus, if you have the following character:
 -- |
@@ -40,14 +44,15 @@ instance Note Character where
 -- | He may be referenced as (for example):
 -- |
 -- |    |Fredward (Freddie) Sharpe|
-    qualifiers c = qualifiers (basic c) `Set.union` extras c where
-        extras = Set.fromList . map fromName . names
+    qualifiers c = qualifiers (basic c) `Set.union` extras where
+        extras = Set.fromList $ map fromName $ drop 1 ns
+        ns = names $ basic c
 
 
 -- | Of a character's tags, the first is the "full name" and the rest
 -- | are pseudonyms. Therefore, the first of a character's tags
 -- | will have the prefixes and suffixes applied, the rest will not.
-    tags c = Set.fromList $ expand $ map namePart $ names c where
+    tags c = Set.fromList $ expand $ map namePart $ names $ basic c where
         expanded n = prefixString (prefixes c) ++ n ++ suffixString (suffixes c)
         expand (n:ns) = expanded n : ns
         expand [] = []

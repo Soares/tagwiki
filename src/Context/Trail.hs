@@ -1,49 +1,49 @@
 module Context.Trail
     ( Trail(..)
     , ascendEra
-    , ascendPinpoint
+    , ascendRef
     , currentEra
-    , currentPinpoint
+    , currentRef
     , descendEra
-    , descendPinpoint
+    , descendRef
     , verifyEras
     , verifyPins
     , verifyTrail
     , home
     ) where
+import Context.Reference
 import Control.Applicative
 import Data.List
 import Data.Utils
-import Text.Pinpoint
 
 data Trail = Trail
-    { eras       :: [String]
-    , pinpoints  :: [Pinpoint]
+    { eras  :: [String]
+    , refs  :: [Reference]
     } deriving (Eq, Show)
 
 ascendEra :: Trail -> Trail
 ascendEra t = t{ eras = tail $ eras t }
 
-ascendPinpoint :: Trail -> Trail
-ascendPinpoint t = t{ pinpoints = tail $ pinpoints t }
+ascendRef :: Trail -> Trail
+ascendRef t = t{ refs = tail $ refs t }
 
 currentEra :: Trail -> Maybe String
 currentEra = maybeHead . eras
 
-currentPinpoint :: Trail -> Maybe Pinpoint
-currentPinpoint = maybeHead . pinpoints
+currentRef :: Trail -> Maybe Reference
+currentRef = maybeHead . refs
 
 descendEra :: String -> Trail -> Trail
 descendEra e t = t{ eras = e:eras t }
 
-descendPinpoint :: Pinpoint -> Trail -> Trail
-descendPinpoint p t = t{ pinpoints = p:pinpoints t }
+descendRef :: Reference -> Trail -> Trail
+descendRef r t = t{ refs = r:refs t }
 
 verifyEras :: Trail -> Bool
 verifyEras = verify . eras
 
 verifyPins :: Trail -> Bool
-verifyPins = verify . pinpoints
+verifyPins = verify . refs
 
 verifyTrail :: Trail -> Bool
 verifyTrail = (&&) <$> verifyEras <*> verifyPins

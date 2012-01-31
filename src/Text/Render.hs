@@ -26,6 +26,7 @@ article :: String -> String -> String
 article name = printf "<article id='%s'>\n<h2>%s</h2>\n%s</article>\n"
     (slugify name) name
 
+-- TODO: "id='a-href-id-some-id-string-a" HEH
 link :: String -> String -> String
 link = printf "<a href='%s'>%s</a>"
 

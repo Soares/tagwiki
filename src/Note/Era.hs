@@ -9,7 +9,7 @@ import Text.ParserCombinators.Parsec ( GenParser )
 import Text.Point ( Side(Auto) )
 import qualified Control.Modifier as Mods
 
-newtype Era = Era { base :: Basic } deriving (Eq, Ord)
+newtype Era = Era { base :: Basic } deriving (Eq, Ord, Show)
 instance Note Era where basic = base
 
 

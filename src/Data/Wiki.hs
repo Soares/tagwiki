@@ -3,7 +3,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Wiki
-    ( Wiki
+--    ( Wiki
+    ( Wiki(..), maps -- TODO: debug only
     , new
     , runInternal
     , record
@@ -13,7 +14,7 @@ module Data.Wiki
     , tagList
     , build
     ) where
-import Context hiding ( doWithEra, doWithPinpoint )
+import Context hiding ( doWithEra, doWithRef )
 import Control.Arrow
 import Control.Applicative
 import Control.Dangerous ( warn, Errorable )
@@ -21,25 +22,27 @@ import Control.Dangerous.Extensions()
 import Control.DateTime.Moment
 import Control.Monad.Reader ( ReaderT(..), asks, )
 import Control.Monad.State ( StateT(..) )
-import Control.Name ( priorities )
+import Control.Name ( priorities, ofPriority )
 import Data.File ( File(File) )
 import Data.List ( intercalate, sort )
 import Data.Map ( Map )
 import Data.Maybe ( fromMaybe )
 import Data.Utils ( headOr )
 import Internal ( Internal(..) )
-import Note ( Note(pins, tags, uid, text, pointer) )
+import Note ( Note(tags, uid, pointer, names, recognizes) )
 import Note.Era ( Era, codes, precodes )
 import Note.Character ( Character )
 import Note.Place ( Place, parent )
 import Prelude hiding ( log )
-import Text.Pin ( Pin )
+import Text.Pin ( Pin, isSelf )
 import Text.Pinpoint ( Pinpoint, pin, point )
 import Text.Printf ( printf )
 import Text.Render ( link, href )
+import Text.Utils
 import qualified Context
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import qualified Text.Pin as Pin
 
 runInternal :: StateT Context (ReaderT Wiki IO) a -> Wiki -> IO a
 runInternal fn = fmap fst . runReaderT (runStateT fn clean)
@@ -50,7 +53,7 @@ runInternal fn = fmap fst . runReaderT (runStateT fn clean)
   --   Internal (StateT Context (ReaderT Wiki m)) where
 instance Internal (StateT Context (ReaderT Wiki IO)) where
     doWithEra = Context.doWithEra
-    doWithPinpoint = Context.doWithPinpoint
+    doWithRef = Context.doWithRef
 
     -- Reslove an era code to an offset
     lookupEraCode str = cacheOffset str create where
@@ -59,12 +62,13 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
         cantFind = warn (NoSuchEra str) *> pure Nothing
 
     -- Resolve a pinpoint to a moment.
-    pinpoint p = cachePinpoint p create where
-        create = doWithPinpoint p momentus
-        momentus = maybe (pure present) pointIn =<< find (pin p)
-        pointIn file = forceMaybe =<< pointer (point p) file
+    pinpoint p = maybe (pure present) resolveToMoment =<< find (pin p) where
+        resolveToMoment file = cacheRef file pt (momentus file)
+        momentus file = doWithRef file pt (pointIn file)
+        pointIn = (forceMaybe =<<) . pointer pt
         forceMaybe Nothing = warn (Unknown p) *> pure present
         forceMaybe (Just x) = pure x
+        pt = point p
 
     -- | An href for a pinpoint.
     -- | Defaults to an empty string.
@@ -81,10 +85,12 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
     -- |    Logs a warning if the pin isn't found.
     -- |    Logs a warning if the pin is ambiguous.
     -- TODO: relax? find :: (MonadReader Wiki c, Contextual c) => Pin -> c (Maybe File)
-    find p = cachePin p (doFirst =<< candidates) where
+    find p | isSelf p = currentFile
+           | otherwise = cachePin p (doFirst . narrow =<< candidates) where
         candidates = headOr [] . filter (not . null) <$> candidateLists
         candidateLists = map dictCandidates <$> asks maps
-        dictCandidates = fromMaybe [] . Map.lookup p
+        dictCandidates = fromMaybe [] . Map.lookup (Pin.tag p)
+        narrow = filter (recognizes p)
         doFirst [] = warn (NotFound p) *> pure Nothing
         doFirst [x] = pure $ Just x
         doFirst (x:xs) = warn (Ambiguous p $ x:xs) *> doFirst [x]
@@ -92,10 +98,10 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
 
     -- | Executes a function on each file, passing it the file uid and contents.
     -- | Designed for i.e. (writefile . (dir </>))
-    -- TODO: relax? build :: Internal c => (FilePath -> String -> c a) -> c [a]
-    build fn = mapM (>>= uncurry fn) . filePairs =<< asks listing where
+    -- TODO: relax? build :: Internal c => (FilePath -> File -> c a) -> c [a]
+    build fn = mapM (uncurry fn) . filePairs =<< asks listing where
         filePairs dict = map makePair (Map.elems dict)
-        makePair f = (,) (uid f) <$> text f
+        makePair f = (,) (uid f) f
 
 
 data Wiki = Wiki
@@ -129,10 +135,11 @@ recordPlace w n p = (record w n p){ places = update (places w) } where
 -- Directory building
 
 -- | All the maps of pins on to files, in order of priority
-maps :: Wiki -> [Map Pin [File]]
+maps :: Wiki -> [Map String [File]]
 maps w = map (pinMap $ listing w) priorities where
     pinMap dir pri = Map.fold (addKeys pri) Map.empty dir
-    addKeys pri file dict = foldr (addKey file) dict (pins pri file)
+    addKeys pri file dict = foldr (addKey file) dict (namesFor pri file)
+    namesFor pri = map slugify . ofPriority pri . names
     addKey file p = Map.insertWith (++) p [file]
 
 -- | The list of all tags for all files (sorted)
