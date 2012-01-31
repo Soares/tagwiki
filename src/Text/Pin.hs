@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pin ( Pin(..), tag, empty, simple, isSelf ) where
+module Text.Pin ( Pin(..), tag, empty, simple, isSelf, fromName ) where
 import Control.Applicative hiding ( many, (<|>), empty )
+import Control.Name
 import Data.Either
 import Data.List hiding ( find )
 import Data.Set ( Set, fromList )
@@ -12,13 +13,12 @@ import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
 import qualified Text.Tag as Tag
-import {-# SOURCE #-} Text.Pinpoint
 
 
 -- A reference to another file and/or event
 data Pin = Pin
     { categories :: Set String
-    , qualifiers :: Set Pinpoint
+    , qualifiers :: Set Pin
     , text       :: String      -- The original text, for display
     }
 
@@ -33,6 +33,9 @@ simple = Pin Set.empty Set.empty
 
 isSelf :: Pin -> Bool
 isSelf = (== empty)
+
+fromName :: Name -> Pin
+fromName = simple . namePart
 
 instance Eq Pin where
     x == y = tag x == tag y

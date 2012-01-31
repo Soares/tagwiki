@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pinpoint ( Pinpoint(pin, point), fromName ) where
+module Text.Pinpoint ( Pinpoint(pin, point) ) where
 import Control.Applicative hiding ( (<|>), empty )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
@@ -10,9 +10,6 @@ data Pinpoint = Pinpoint
     { pin   :: Pin
     , point :: Maybe Point
     } deriving (Eq, Ord)
-
-fromName :: String -> Pinpoint
-fromName str = Pinpoint (simple str) Nothing
 
 instance Show Pinpoint where
     show (Pinpoint p Nothing) = show p

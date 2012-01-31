@@ -1,8 +1,9 @@
 module Control.DateTime.Moment
     ( Moment
-    , Direction(..)
     , Momentus(..)
+    , Direction(..)
     , Offset(..)
+    , offset
     , present
     , plus
     , minus
@@ -26,14 +27,18 @@ data Moment = Moment
     } deriving Eq
 
 data Direction
-    = Positive
-    | Negative
-    deriving (Eq, Ord, Read, Show)
+    = Before
+    | After
+    deriving (Eq, Ord, Show)
 
 data Offset
     = Descending Direction Moment
     | Root
     deriving (Eq, Show)
+
+offset :: Offset -> Moment
+offset (Descending _ mo) = mo
+offset Root = present
 
 present :: Moment
 present = Moment{values=[], era=""}
@@ -68,7 +73,7 @@ root :: (Internal m) => String -> m String
 root "" = pure ""
 root e = maybe (pure "") recurse =<< lookupEraCode e where
     recurse Root = root ""
-    recurse (Descending _ mo) = doWithEra (era mo) $ root (era mo)
+    recurse o = doWithEra e' $ root e' where e' = era $ offset o
 
 relateable :: (Internal m) => String -> String -> m Bool
 relateable x y = (==) <$> root x <*> root y
@@ -84,12 +89,9 @@ rebase xs ex ey = check *> ys where
 normal :: (Internal m) => Moment -> m [Maybe Int]
 normal (Moment xs "") = pure xs
 normal (Moment xs e) = maybe (pure xs) recurse =<< lookupEraCode e where
-    recurse (Descending dir mo) = add (direct dir xs) <$> normal mo
+    recurse (Descending After mo) = add xs <$> normal mo
+    recurse (Descending Before mo) = add (neg xs) <$> normal mo
     recurse Root = normal (Moment xs "")
-
-direct :: Direction -> [Maybe Int] -> [Maybe Int]
-direct Positive = id
-direct Negative = neg
 
 instance Parseable Moment where
     parser = try (date >>= andTime)

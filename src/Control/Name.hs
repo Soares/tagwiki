@@ -14,6 +14,9 @@ low = Pri 10
 priorities :: [Priority]
 priorities = [low, high]
 
+inflate :: (String -> [String]) -> Name -> [Name]
+inflate fn (Name pri n) = zipWith Name (repeat pri) (fn n)
+
 data Name = Name
     { priority :: Priority
     , namePart :: String

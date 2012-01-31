@@ -9,7 +9,6 @@ import Data.Utils
 import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
-import Text.Point ( Point(name) )
 import Text.Printf
 import qualified Text.Render as Render
 
@@ -33,9 +32,8 @@ instance Fragment Body where
 
 
 -- Event finding
-event :: Maybe Point -> Body -> Maybe Event
-event pt = maybeHead . filter (recognizes p) . events
-    where p = maybe "" name pt
+event :: String -> Body -> Maybe Event
+event str = maybeHead . filter (recognizes str) . events
 
 -- Parsing
 empty :: Body

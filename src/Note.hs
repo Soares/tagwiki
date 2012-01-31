@@ -1,34 +1,53 @@
-module Note where
-import Control.Appearance ( Appearance )
+module Note
+    ( Note(..)
+    , Basic(modifiers)
+    , parseBasic
+    , prefixes
+    , suffixes
+    ) where
 import Control.Applicative
 import Control.DateTime.Moment ( Moment )
 import Control.Event ( at )
 import Control.Modifier ( Modifier )
 import Control.Name
-import Data.Body ( Body(apps), event )
+import Data.Body ( Body, event )
 import Data.Function ( on )
 import Data.List ( sort )
 import Data.Utils
 import Data.Set ( Set )
 import Internal
 import Text.Fragment
+import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.TagWiki
 import Text.Pin ( Pin(Pin) )
-import Text.Point ( Point(side), Side(..) )
-import Text.Pinpoint ( Pinpoint )
+import Text.Point ( Point(side) )
 import Text.Printf
 import Text.Render
 import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
+import qualified Text.Point as Point
 -- TODO: remove Record and Record/Note.hs-boot
 
 data Basic = Basic
-    { _source     :: FilePath
-    , _uid        :: Int
+    { _uid        :: Int
     , _names      :: [Name]
-    , modifiers  :: [Modifier]
+    , modifiers  :: [Modifier Pin]
     , _body       :: Body
     }
+
+
+-- | Helpers for people manipulating bodies in common cases
+-- | (useful for most notes, but not notes in general)
+
+-- The prefixes that were given (in order)
+prefixes :: (Note a) => a -> [String]
+prefixes = Mods.prefixes . modifiers . basic
+
+-- The suffixes that were given (in order)
+suffixes :: (Note a) => a -> [String]
+suffixes = Mods.suffixes . modifiers . basic
+
 
 instance Eq Basic where (==) = (==) `on` _uid
 instance Ord Basic where (<=) = (<=) `on` _uid
@@ -56,13 +75,8 @@ class Note a where
     categories = Set.fromList . Mods.categories . modifiers . basic
 
     -- The qualifiers we recognize
-    qualifiers :: a -> Set Pinpoint
+    qualifiers :: a -> Set Pin
     qualifiers = Set.fromList . Mods.qualifiers . modifiers . basic
-
-    -- The source file, needed so that we can set jump locations
-    -- for vim tags
-    source :: a -> FilePath
-    source = _source . basic
 
     -- How to access the body of the record
     body :: a -> Body
@@ -93,6 +107,13 @@ class Note a where
     primaryName :: a -> String
     primaryName = headOr "" . map namePart . names
 
+    -- Resolution of a point
+    pointer :: (Internal i) => Maybe Point -> a -> i (Maybe Moment)
+    pointer Nothing _ = pure Nothing
+    pointer (Just pt) r = case event (Point.tag pt) (body r) of
+        Just ev -> at (side pt) ev
+        Nothing -> pure Nothing
+
     -- Render the record as text
     text :: (Internal i) => a -> i String
     text r = ((top ++ "\n") ++) <$> bottom where
@@ -117,87 +138,9 @@ instance Note Basic where
     basic = id
 
 
--- TODO: uneccesary (?) function
-firstEvent :: (Internal i) => Maybe Point -> Basic -> i (Maybe Moment)
-firstEvent pt n = case event pt $ body n of
-    Just ev -> at (maybe Start side pt) ev
-    Nothing -> pure Nothing
-
-
-firstAppearance :: Basic -> Maybe Appearance
-firstAppearance = maybeHead . apps . body
-
-{-
--- ====================================================
--- Everything below here is dead
-
--- | The names used internatlly to match pins
--- | Will be turned into Pins automatically
-    , names      :: [(Bool, String)]
--- The tags to use for vim. There should be only one
--- (or one per pseudonym); use a fuzzy selector if you
--- want more flexibility.
-    , tags       :: [String]
-
-pin :: String -> Note -> Pin
-pin s n = Pin s (categories n) (qualifiers n)
-
-instance Record Note where
-    note = id
-
-instance Eq Note where
-    x == y = ns && qs where
-        ns = fromList (names x) == fromList (names y)
-        qs = fromList (qualifiers x) == fromList (qualifiers y)
-
-instance Ord Note where
-    x <= y = pair x <= pair y where
-        pair = fromList . names &&& fromList . qualifiers
-
-makeNote :: FilePath -> GenParser Char st Note
-makeNote fp = fst <$> parseNote fp Mods.catOrQual
-
-firstEvent :: (Momentable m) => Maybe Point -> Note -> m (Maybe Moment)
-firstEvent pt = Body.moment pt . body
-
-firstAppearance :: Note -> Maybe Appearance
-firstAppearance = maybeHead . Body.apps . body
-
-parseNote :: FilePath -> GenParser Char st Modifier ->
-                         GenParser Char st (Note, [Modifier])
-parseNote fp parseMods = do
-    ns <- firstLine
-    mods <- parseMods `manyTill` (whitespace *> eol)
-    let qs = Mods.qualifiers mods
-    let cs = Mods.categories mods
+parseBasic :: Int -> GenParser Char st (Modifier Pin) -> GenParser Char st Basic
+parseBasic i modParser = do
+    ns <- parser `manyTill` (whitespace *> eol)
+    ms <- modParser `manyTill` (whitespace *> eol)
     b <- parser
-    pure (Note{ source = fp
-              , names = ns
-              , tags = map (makeTag qs . snd) ns
-              , categories = cs
-              , qualifiers = qs
-              , body = b }, mods)
-
-makeTag :: [Pinpoint] -> String -> String
-makeTag qs n = unwords (n:map showq (sort qs)) where
-    showq = printf "(%s)" . show
-
-firstLine :: GenParser Char st [(Bool, String)]
-firstLine = (name `sepBy` designator Y.comma) <* eol where
-    name= whitespace >> (,) <$> priority <*> str where
-        priority = option False (pri >> return True)
-        escPri = hack >> pri
-        str = (++) <$> option "" escPri <*> tag
-        pri = string Y.priority
-
-
-
---- Warnings
-data Warning = Ignored [String]
-             | Unrecognized String
-instance Show Warning where
-    show (Ignored xs) = printf
-        "Extra events ignored: [%s]" (intercalate ", " xs)
-    show (Unrecognized x) = printf
-        "Unrecognized event (resolved as !start) %s" x
-        -}
+    pure $ Basic i ns ms b
