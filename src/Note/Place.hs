@@ -3,6 +3,7 @@ import Control.Appearance
 import Control.Applicative hiding ( (<|>) )
 import Control.Name
 import Data.Body
+import Data.Function
 import Data.String.Utils ( strip )
 import Data.Utils
 import Note
@@ -19,10 +20,13 @@ import qualified Data.Set as Set
 data Place = Place
     { base :: Basic
     , size :: Double
-    } deriving (Eq, Ord, Show)
+    } deriving Eq
 
 parent :: Place -> Maybe Pin
 parent = fmap (pin . ref) . maybeHead . apps . body
+
+instance Ord Place where (<=) = (<=) `on` uid
+instance Show Place where show = primaryName
 
 instance Note Place where
     basic = base

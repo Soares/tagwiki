@@ -44,6 +44,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Text.Pin as Pin
 
+-- | TODO: thread the Context in, so that we can keep the cache fresh.
 runInternal :: StateT Context (ReaderT Wiki IO) a -> Wiki -> IO a
 runInternal fn = fmap fst . runReaderT (runStateT fn clean)
 
@@ -75,7 +76,7 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
     location pp = maybe "" fromFile <$> find p where
         (p, pt) = (pin &&& point) pp
         fromFile = link <$> to <*> show
-        to = href (show <$> pt) . uid
+        to = href (show <$> pt) . show
 
 
     -- | Find a pin.
@@ -101,7 +102,7 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
     -- TODO: relax? build :: Internal c => (FilePath -> File -> c a) -> c [a]
     build fn = mapM (uncurry fn) . filePairs =<< asks listing where
         filePairs dict = map makePair (Map.elems dict)
-        makePair f = (,) (uid f) f
+        makePair f = (,) (slugify (show f) ++ show (uid f)) f
 
 
 data Wiki = Wiki

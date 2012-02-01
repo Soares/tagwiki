@@ -24,7 +24,6 @@ import Text.Pin ( Pin )
 import Text.Point ( Point(side) )
 import Text.Printf
 import Text.Render
-import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
 import qualified Text.Pin as Pin
@@ -34,7 +33,7 @@ import qualified Text.Symbols as Y
 data Basic = Basic
     { _uid        :: Int
     , _names      :: [Name]
-    , modifiers  :: [Modifier Pin]
+    , modifiers   :: [Modifier Pin]
     , _body       :: Body
     } deriving Show
 
@@ -62,8 +61,8 @@ class Note a where
     -- A unique id; nice if it contains no spaces etc.
     -- the Int in `construct` will be unique, but sometimes you just want
     -- a prettier identifier.
-    uid :: a -> String
-    uid r = printf "%s-%d" (slugify $ primaryName r) (_uid $ basic r)
+    uid :: a -> Int
+    uid = _uid . basic
 
     -- All our names
     -- Comes with a priority level attached
@@ -133,7 +132,6 @@ class Note a where
 
 instance Note Basic where
     basic = id
-
 
 parseNote :: Int -> GenParser Char st Basic
 parseNote i = parseBasic i Mods.catOrQual

@@ -10,6 +10,7 @@ import Data.List ( sort, intercalate )
 import Data.Maybe
 import Data.Wiki
 import Internal
+import Location ( normalize, display )
 import Note ( text, parseNote )
 import Note.Character
 import Note.Era
@@ -26,6 +27,7 @@ data Options = Options
     , optSourceDir :: FilePath
     , optBuildDir  :: Maybe FilePath
     , optTagFile   :: Maybe FilePath
+    , optPlaceTree :: Bool
     , optHelp      :: Bool
     } deriving Show
 
@@ -36,6 +38,7 @@ defaultOptions = Options
     , optSourceDir = "src"
     , optBuildDir  = Nothing
     , optTagFile   = Nothing
+    , optPlaceTree = False
     , optHelp      = False
     }
 
@@ -61,6 +64,10 @@ options =
                                                    Just x -> Just x
                                 }) "FILE")
         "the tag file to write to (default `tags`)"
+
+    , Option "p" ["tree"]
+        (NoArg (\opt -> opt{optPlaceTree = True}))
+        "output a tree of the places in the wiki"
 
     , Option "h" ["help"]
         (NoArg (\opt -> opt{optHelp = True}))
@@ -97,6 +104,7 @@ run opts = do
                 , optBuildDir  = bld
                 , optSourceDir = src
                 , optTagFile   = tagFile
+                , optPlaceTree = drawTree
                 } = opts
 
     files <- locate $ root </> src
@@ -110,8 +118,21 @@ run opts = do
 
     when (isJust bld) $ do
         let dest = root </> fromJust bld
+        clearDir dest
         let writer = doWrite . (dest </>)
         runInternal (build writer) wiki *> putStrLn ""
+
+    when drawTree $ do
+        dict <- runInternal (normalize =<< asks places) wiki
+        mapM_ putStrLn $ lines $ display dict
+
+
+clearDir :: FilePath -> IO ()
+clearDir dest = do
+    exists <- doesDirectoryExist dest
+    createDirectoryIfMissing exists dest
+    files <- filter (not . (== '.') . head) <$> getDirectoryContents dest
+    mapM_ (removeFile . (dest </>)) files
 
 
 doWrite :: (MonadIO i, Internal i) => FilePath -> File -> i ()
