@@ -114,7 +114,7 @@ instance Parseable Absolute where
          <?> "an absolute moment" where
         yr = do
             y <- number
-            whitespace
+            _ <- whitespace
             e <- many1 letter
             pure (Absolute e y 0 0 0 0 0 0)
         date = do
