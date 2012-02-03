@@ -65,7 +65,7 @@ display :: (Note n, Ord n, Show n) => Map n n -> String
 display = Tree.drawTree . Node "(root)" . map (fmap show) . tree
 
 {-
- - TODO: Tree -> Buuble Tree
+ - TODO: Tree -> Bubble Tree
     data Bubble = Bubble File Size
     tree :: Directory -> Tree Bubble
     instance JSON Bubble

@@ -7,8 +7,7 @@ module Note
     , suffixes
     ) where
 import Control.Applicative
-import Control.DateTime.Moment ( Moment )
-import Control.Event ( at )
+import Control.DateTime.Absolute
 import Control.Modifier ( Modifier )
 import Control.Name
 import Data.Body ( Body, event )
@@ -104,10 +103,10 @@ class Note a where
     primaryName = headOr "" . map namePart . names
 
     -- Resolution of a point
-    pointer :: (Internal i) => Maybe Point -> a -> i (Maybe Moment)
+    pointer :: (Internal i) => Maybe Point -> a -> i (Maybe Absolute)
     pointer Nothing _ = pure Nothing
     pointer (Just pt) r = case event (Point.tag pt) (body r) of
-        Just ev -> at (side pt) ev
+        Just ev -> Just <$> when (side pt) ev
         Nothing -> pure Nothing
 
     -- Render the record as text

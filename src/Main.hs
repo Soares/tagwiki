@@ -5,11 +5,12 @@ import Control.Dangerous hiding ( Warning )
 import Control.Dangerous.Extensions()
 import Control.Monad
 import Control.Monad.Reader
+import Context ( clean )
 import Data.File
 import Data.List ( sort, intercalate )
 import Data.Maybe
 import Data.Wiki
-import Internal
+import Internal hiding ( when )
 import Location ( normalize, display )
 import Note ( text, parseNote )
 import Note.Character
@@ -110,6 +111,7 @@ run opts = do
     files <- locate $ root </> src
     wiki <- foldM alter new $ zip [0..] files
 
+    -- TODO: thread context more normally.
     when (isJust tagFile) $ do
         let dest = root </> fromJust tagFile
         let tupleToLine = uncurry (makeTag $ root </> src)
@@ -120,10 +122,10 @@ run opts = do
         let dest = root </> fromJust bld
         clearDir dest
         let writer = doWrite . (dest </>)
-        runInternal (build writer) wiki *> putStrLn ""
+        runInternal (build writer) clean wiki *> putStrLn ""
 
     when drawTree $ do
-        dict <- runInternal (normalize =<< asks places) wiki
+        (dict, _) <- runInternal (normalize =<< asks places) clean wiki
         mapM_ putStrLn $ lines $ display dict
 
 

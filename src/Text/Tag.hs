@@ -6,8 +6,7 @@ import Text.ParserCombinators.TagWiki
 import qualified Text.Symbols as Y
 
 tag :: GenParser Char st String
-tag = except Y.restrictedInRefs <* optional halt where
-    halt = whitespace >> string Y.halt >> whitespace >> pure ()
+tag = except Y.restrictedInRefs
 
 cleanTag :: GenParser Char st String
 cleanTag = strip <$> tag

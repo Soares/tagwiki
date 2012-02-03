@@ -17,6 +17,7 @@ import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
 
+-- TODO: add time zone field.
 data Place = Place
     { base :: Basic
     , size :: Double

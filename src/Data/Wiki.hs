@@ -3,8 +3,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Wiki
---    ( Wiki
-    ( Wiki(..), maps -- TODO: debug only
+    ( Wiki(..)
     , new
     , runInternal
     , record
@@ -14,12 +13,12 @@ module Data.Wiki
     , tagList
     , build
     ) where
-import Context hiding ( doWithEra, doWithRef )
+import Context
 import Control.Arrow
 import Control.Applicative
 import Control.Dangerous ( warn, Errorable )
 import Control.Dangerous.Extensions()
-import Control.DateTime.Moment
+import Control.DateTime.Absolute
 import Control.Monad.Reader ( ReaderT(..), asks, )
 import Control.Monad.State ( StateT(..) )
 import Control.Name ( priorities, ofPriority )
@@ -39,35 +38,22 @@ import Text.Pinpoint ( Pinpoint, pin, point )
 import Text.Printf ( printf )
 import Text.Render ( link, href )
 import Text.Utils
-import qualified Context
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Text.Pin as Pin
 
--- | TODO: thread the Context in, so that we can keep the cache fresh.
-runInternal :: StateT Context (ReaderT Wiki IO) a -> Wiki -> IO a
-runInternal fn = fmap fst . runReaderT (runStateT fn clean)
+runInternal :: StateT Context (ReaderT Wiki IO) a -> Context -> Wiki -> IO (a, Context)
+runInternal fn ctx  = runReaderT (runStateT fn ctx)
 
 -- | Operations that can poke around the directory
--- | TODO: relax constraints
--- instance (Errorable m, Applicative m, Monad m, MonadReader Wiki m) =>
-  --   Internal (StateT Context (ReaderT Wiki m)) where
+-- | TODO: relax constraints, use classes like Errorable/MonadState
 instance Internal (StateT Context (ReaderT Wiki IO)) where
-    doWithEra = Context.doWithEra
-    doWithRef = Context.doWithRef
-
-    -- Reslove an era code to an offset
-    lookupEraCode str = cacheOffset str create where
-        create = maybe cantFind getoff . Map.lookup str =<< asks eras
-        getoff (side, era) = Just <$> (Descending side <$> moment era)
-        cantFind = warn (NoSuchEra str) *> pure Nothing
-
     -- Resolve a pinpoint to a moment.
-    pinpoint p = maybe (pure present) resolveToMoment =<< find (pin p) where
+    pinpoint p = maybe (pure Present) resolveToMoment =<< find (pin p) where
         resolveToMoment file = cacheRef file pt (momentus file)
         momentus file = doWithRef file pt (pointIn file)
         pointIn = (forceMaybe =<<) . pointer pt
-        forceMaybe Nothing = warn (Unknown p) *> pure present
+        forceMaybe Nothing = warn (Unknown p) *> pure Present
         forceMaybe (Just x) = pure x
         pt = point p
 
@@ -85,7 +71,6 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
     -- | Logs warnings the first time a pin is looked up, but not subsequently:
     -- |    Logs a warning if the pin isn't found.
     -- |    Logs a warning if the pin is ambiguous.
-    -- TODO: relax? find :: (MonadReader Wiki c, Contextual c) => Pin -> c (Maybe File)
     find p | isSelf p = currentFile
            | otherwise = cachePin p (doFirst . narrow =<< candidates) where
         candidates = headOr [] . filter (not . null) <$> candidateLists
@@ -99,7 +84,6 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
 
     -- | Executes a function on each file, passing it the file uid and contents.
     -- | Designed for i.e. (writefile . (dir </>))
-    -- TODO: relax? build :: Internal c => (FilePath -> File -> c a) -> c [a]
     build fn = mapM (uncurry fn) . filePairs =<< asks listing where
         filePairs dict = map makePair (Map.elems dict)
         makePair f = (,) (slugify (show f) ++ show (uid f)) f
@@ -108,7 +92,7 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
 data Wiki = Wiki
     { listing :: Map FilePath File
     , places  :: Map Place Pin
-    , eras    :: Map String (Direction, Era)
+    , eras    :: Map String Era
     }
 
 
@@ -121,10 +105,10 @@ record w n f = w{ listing = Map.insert n (File f) (listing w) }
 recordEra :: Wiki -> FilePath -> Era -> Wiki
 recordEra w n e = (record w n e){ eras = update (eras w) } where
     update dict = Map.unions [dict, afters dict, befores dict]
-    afters = makeDict After (codes e)
-    befores = makeDict Before (precodes e)
-    makeDict side ks dict = foldr (insert side) dict ks
-    insert side code = Map.insert code (side, e)
+    afters = makeDict $ codes e
+    befores = makeDict $ precodes e
+    makeDict ks dict = foldr insert dict ks
+    insert code = Map.insert code e
 
 recordCharacter :: Wiki -> FilePath -> Character -> Wiki
 recordCharacter = record

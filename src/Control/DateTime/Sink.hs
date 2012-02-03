@@ -1,5 +1,47 @@
+module Control.DateTime.Sink where
+import Control.Applicative hiding ( many, (<|>) )
+import Control.Dangerous hiding ( Warning )
+import Internal
+import Text.Printf
+
+data Unknown = Unknown deriving Eq
+data Present = Present deriving Eq
+
+instance Show Unknown where show = const "«unknown»"
+instance Show Present where show = const "«present»"
+
+instance Moment Unknown where
+    year = const Nothing
+    month = const Nothing
+    day = const Nothing
+    hour = const Nothing
+    prime = const Nothing
+    second = const Nothing
+    extra = const Nothing
+    era = const Nothing
+    plus x _ = warn (InvalidOperation "add to" $ show x) *> pure x
+    minus x _ = warn (InvalidOperation "subtract from" $ show x) *> pure x
+    clobber x _ = warn (InvalidOperation "clobber" $ show x) *> pure x
+instance Moment Present where
+    year = const Nothing
+    month = const Nothing
+    day = const Nothing
+    hour = const Nothing
+    prime = const Nothing
+    second = const Nothing
+    extra = const Nothing
+    era = const Nothing
+    plus x _ = warn (InvalidOperation "add to" $ show x) *> pure x
+    minus x _ = warn (InvalidOperation "subtract from" $ show x) *> pure x
+    clobber x _ = warn (InvalidOperation "clobber" $ show x) *> pure x
+
+data Warning = InvalidOperation String String
+instance Show Warning where
+    show (InvalidOperation op x) = printf "Can't %s %s" op x
+
+{- TODO: Remove
 module Control.DateTime.Moment
-    ( Moment
+    ( Moment(..)
     , Momentus(..)
     , Direction(..)
     , Offset(..)
@@ -20,7 +62,7 @@ import Prelude hiding ( negate )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Internal ( Internal(..) )
-
+    
 -- TODO: Add timezones
 
 data Moment = Moment
@@ -71,18 +113,9 @@ sub = zipAll $ liftM2 (-)
 neg :: [Maybe Int] -> [Maybe Int]
 neg = map $ fmap (0-)
 
-root :: (Internal m) => String -> m String
-root "" = pure ""
-root e = maybe (pure "") recurse =<< lookupEraCode e where
-    recurse Root = root ""
-    recurse o = doWithEra e' $ root e' where e' = era $ offset o
-
-relateable :: (Internal m) => String -> String -> m Bool
-relateable x y = (==) <$> root x <*> root y
-
 rebase :: (Internal m) => [Maybe Int] -> String -> String -> m [Maybe Int]
 rebase xs ex ey = check *> ys where
-    check = relateable ex ey >>= (`unless` err)
+    check = canRelateEras ex ey >>= (`unless` err)
     err = throw $ NotRelateable ex ey
     ys = sub <$> normal xbase <*> normal ybase
     xbase = Moment xs ex
@@ -143,3 +176,4 @@ instance Show Moment where
 class Momentus a where moment :: (Internal m) => a -> m Moment
 
 data Error = NotRelateable String String deriving Show
+-}

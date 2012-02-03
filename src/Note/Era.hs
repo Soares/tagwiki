@@ -1,29 +1,31 @@
 module Note.Era where
 import Control.Applicative hiding ( (<|>) )
-import Control.DateTime.Moment
-import Control.Event ( at )
+import Control.DateTime.Absolute
 import Data.Body ( event )
-import Data.Maybe ( fromMaybe )
+import Data.Utils
+import Internal
 import Note ( Note(..), Basic, parseBasic, prefixes, suffixes )
 import Text.ParserCombinators.Parsec ( GenParser )
-import Text.Point ( Side(Auto) )
+import Text.Utils
 import qualified Control.Modifier as Mods
 
 newtype Era = Era { base :: Basic } deriving (Eq, Ord, Show)
 instance Note Era where basic = base
 
+code :: Era -> String
+code e = headOr (show e) (prefixes e)
 
 codes :: Era -> [String]
-codes = prefixes
+codes = map slugify . prefixes
 
 precodes :: Era -> [String]
-precodes = suffixes
+precodes = map slugify . suffixes
 
 
-instance Momentus Era where
-    moment e = case event "dawn" $ body e of
-        Just ev -> fromMaybe present <$> at Auto ev
-        Nothing -> pure present
+instance Momented Era where
+    when side e = case event "dawn" $ body e of
+        Just ev -> when side ev
+        Nothing -> pure Present
 
 
 parseEra :: Int -> GenParser Char st Era
