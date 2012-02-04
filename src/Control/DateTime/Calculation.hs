@@ -43,16 +43,19 @@ instance Parseable Term where
          <?> "a date calculation term"
 
 instance Parseable Calculation where
-    parser = try exact <|> absRange <|> relRange <?> "date calculation" where
+    parser = try exact
+         <|> try absRange
+         <|> relRange
+         <?> "date calculation" where
         obrace = char '{' >> anyWhite >> return ()
         cbrace = anyWhite >> char '}' >> return ()
         comma = operator Y.comma
         exact = between obrace cbrace
             (Exactly <$> parser)
         absRange = between obrace cbrace
-            (AbsRange <$> parser <*> (comma *> parser))
+            (AbsRange <$> parser <*> (comma *> whitespace *> parser))
         relRange = between obrace cbrace
-            (RelRange <$> parser <*> (comma *> parser))
+            (RelRange <$> parser <*> (comma *> whitespace *> parser))
 
 instance Fragment Calculation where
     resolve (Exactly x) = show <$> moment x

@@ -38,7 +38,7 @@ data Absolute = Absolute
 -- NOTE: this is not transitive. Use only once before display.
 normalize :: Absolute -> Absolute
 normalize Present = Present
-normalize (Absolute e y m d h p s x) = Absolute e y' m' d',h' p' s' x where
+normalize (Absolute e y m d h p s x) = Absolute e y' m' d' h' p' s' x where
     (h', p', s', dd) = fixTime h p s
     (y', m', d') = fixDate y m (d + dd)
 
@@ -121,7 +121,7 @@ fromRel e (Relative y m d h p s x) = Absolute e
 
 instance Show Absolute where
     show Present = "«present»"
-    show a = case reads $ show $ toRel a of
+    show a = case reads $ show $ toRel $ normalize a of
         [] -> era a
         ((y, rest):_) -> reduce $ printf "%d%s%s" (y :: Int) (era a) rest where
             bad = mkRegex "(/0/0)?( 0:00)\\.0\\.0$"
