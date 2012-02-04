@@ -8,7 +8,6 @@ import Control.Dangerous hiding ( Warning )
 import Control.Dangerous.Extensions()
 import Control.Monad
 import Control.Monad.Reader
-import Context ( clean )
 import Data.File
 import Data.List ( sort, intercalate )
 import Data.Maybe
@@ -114,22 +113,22 @@ run opts = do
     files <- locate $ root </> src
     wiki <- foldM alter new $ zip [0..] files
 
-    -- TODO: thread context more normally.
     when (isJust tagFile) $ do
         let dest = root </> fromJust tagFile
         let tupleToLine = uncurry (makeTag $ root </> src)
         let contents = unlines . sort . map tupleToLine $ tagList wiki
         writeFile dest contents
 
-    when (isJust bld) $ do
-        let dest = root </> fromJust bld
-        clearDir dest
-        let writer = doWrite . (dest </>)
-        runInternal (build writer) clean wiki *> putStrLn ""
-
-    when drawTree $ do
-        (dict, _) <- runInternal (normalize =<< asks places) clean wiki
-        mapM_ putStrLn $ lines $ display dict
+    flip runInternal wiki $ do
+        when (isJust bld) $ do
+            let dest = root </> fromJust bld
+            let writer = doWrite . (dest </>)
+            liftIO $ clearDir dest
+            build writer *> liftIO (putStrLn "")
+        when drawTree $ do
+            dict <- normalize =<< asks places
+            let printLn = liftIO . putStrLn
+            mapM_ printLn $ lines $ display dict
 
 
 clearDir :: FilePath -> IO ()
