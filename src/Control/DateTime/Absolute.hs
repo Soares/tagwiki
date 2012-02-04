@@ -1,5 +1,4 @@
 module Control.DateTime.Absolute
-{- TODO
     ( Absolute(..)
     , Modification(Done)
     , apply
@@ -11,7 +10,7 @@ module Control.DateTime.Absolute
     , fromRel
     , toRel
     , normalize
-    ) -} where
+    ) where
 import Control.Applicative hiding ( (<|>), optional )
 import Control.DateTime.Relative ( Relative(Relative) )
 import Data.Maybe
