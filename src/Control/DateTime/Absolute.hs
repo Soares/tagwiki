@@ -1,4 +1,5 @@
 module Control.DateTime.Absolute
+{- TODO
     ( Absolute(..)
     , Modification(Done)
     , apply
@@ -10,7 +11,7 @@ module Control.DateTime.Absolute
     , fromRel
     , toRel
     , normalize
-    ) where
+    ) -} where
 import Control.Applicative hiding ( (<|>), optional )
 import Control.DateTime.Relative ( Relative(Relative) )
 import Data.Maybe
@@ -34,11 +35,10 @@ data Absolute = Absolute
     } | Present
     deriving Eq
 
--- NOTE: this is not perfect. Dates are hard. Only to be used once
--- before display.
+-- NOTE: this is not transitive. Use only once before display.
 normalize :: Absolute -> Absolute
 normalize Present = Present
-normalize (Absolute e y m d h p s x) = Absolute e y' m' d' h' p' s' x where
+normalize (Absolute e y m d h p s x) = Absolute e y' m' d',h' p' s' x where
     (h', p', s', dd) = fixTime h p s
     (y', m', d') = fixDate y m (d + dd)
 
@@ -50,21 +50,62 @@ fixTime h p s = (h', p', s', rh) where
     (h', rh) = kp (h + rp) 10   -- 10 hours to a day
 
 fixDate :: Int -> Int -> Int -> (Int, Int, Int)
-fixDate y 0 0 = (y, 0, 0)
-fixDate y 0 1 | mod y 4 == 0 = (y, 0, 1)
-fixDate y 0 n | mod y 4 == 0 = fixDate y 1 (n-1)
-              | otherwise = fixDate y 1 n
-fixDate y m 0 = fixDate y m 1
-fixDate y m d | m `elem` [2, 5, 8, 11] && d <= 31 = fixMonth y m d
-              | m `elem` [2, 5, 8, 11] && d >= 31 = fixDate y (m+1) (d-31)
-              | d <= 30 = fixMonth y m d
-              | d >= 30 = fixDate y (m+1) (d-31)
-              | otherwise = fixMonth y m d
+--  | This is not easy because zero days are not allowed except on the
+--  | zero month. So this transform is NOT transitive nor associative.
+--  | Only use it once before display, as it is a bit lossy.
+-- Tests:
+--   fixDate 201 0 (-1) == (200,12,30)
+--   fixDate 201 3 (-1) == (200,2,31)
+--   fixDate 307 1 (-1) == (307,0,0)
+--   fixDate 400 1 (-1) == (400,0,1)
+--   fixDate 307 0  1   == (307,1,1)
+--   fixDate 307 0  2   == (307,1,2)
+--   fixDate 200 0  1   == (200,0,1)
+--   fixDate 200 0  2   == (307,1,1)
+--   fixDate 200 1  31  == (200,2,1)
+--   fixDate 200 2  35  == (200,3,4)
+fixDate y m d
+--  | Day less than zero
+    | d < 0 = fixDate y (m - 1) (d + daysIn y (m-1) + 1)
+--  | Everything looks just peachy (day-wize.) Call the mo/yr fixer.
+    | d > 0 && d <= daysIn y m = fixMonth y m d
+--  | Day too large:
+--  | This gets a bit fishy because of how zero-days are recorded.
+--  | (Stupid naturalistic date system.)
+    | d > daysIn y m = fixMonth y (m + 1) (d - daysIn y m)
+--  | This is where the non-transitivity comes in.
+--  | 0-day is displayed as 1-day on non-zero months. :C
+    | d == 0 && isZeroMonth m = fixMonth y m d
+    | d == 0 = fixMonth y m 1
+--  | I don't think we missed any cases, but the compiler won't trust me.
+--  | This is what we do when something odd comes up: pass it off!
+    | otherwise = fixMonth y m d
+
+daysIn :: Int -> Int -> Int
+daysIn y m | isZeroMonth m && isLeapYear y = 1
+           | isZeroMonth m = 0
+           | mod m 13 `elem` [2, 5, 8, 11] = 31
+           | otherwise = 30
+
+isLeapYear :: Int -> Bool
+isLeapYear y = mod y 4 == 0
+
+isZeroMonth :: Int -> Bool
+isZeroMonth m = mod m 13 == 0
 
 -- Assumes the day is correct if the month does not change
 fixMonth :: Int -> Int -> Int -> (Int, Int, Int)
-fixMonth y m d | m <= 12 = (y, m, d)
-               | otherwise = fixDate (y+1) (m-12) d
+--  | 200/-1/1 → 199/12/1
+fixMonth y m d | m < 0 = fixDate (y-1) (m+13) d
+--  | All m == 0 cases should have been corrected in fixDate
+fixMonth y 0 d = (y, 0, d)
+--  | Now we may assume m > 0
+fixMonth y m d
+--  | Everything looks fine
+    | m <= 12 = (y, m, d)
+--  | m is out of range.
+--  | 200/13/2 → 201/0/2 (→ 201/1/1)
+    | otherwise = fixDate (y+1) (m-13) d
 
 
 toRel :: Absolute -> Relative
@@ -152,18 +193,7 @@ instance Parseable Modification where
     parser = try (Operation clobber <$> (clob *> parser) <*> floating parser)
         <|> try (Operation plus <$> (add *> parser) <*> floating parser)
         <|> try (Operation minus <$> (sub *> parser) <*> floating parser)
-        -- TODO: remove <|> try (between oparen cparen parser)
         <|> pure Done
-        {-
-
--- | Parse a whole expression of absolute dates
-expression :: GenParser Char st Absolute
-expression = try (clobber <$> parser <*> (whitespace *> Relative.expression))
-         <|> try (minus <$> parser <*> (sub *> Relative.expression))
-         <|> try (plus <$> parser <*> (add *> Relative.expression))
-         <|> parser
-         <?> "absolute moment"
-         -}
 
 add, sub, clob :: GenParser Char st ()
 clob = operator Y.clobDate
