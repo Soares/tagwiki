@@ -25,7 +25,6 @@ import Control.Name ( priorities, ofPriority )
 import Data.File ( File(File) )
 import Data.List ( intercalate, sort )
 import Data.Map ( Map )
-import Data.Maybe ( fromMaybe )
 import Data.Utils ( headOr )
 import Internal ( Internal(..) )
 import Note ( Note(tags, uid, pointer, names, recognizes) )
@@ -72,14 +71,15 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
     -- |    Logs a warning if the pin isn't found.
     -- |    Logs a warning if the pin is ambiguous.
     find p | isSelf p = currentFile
-           | otherwise = cachePin p (doFirst . narrow =<< candidates) where
-        candidates = headOr [] . filter (not . null) <$> candidateLists
-        candidateLists = map dictCandidates <$> asks maps
-        dictCandidates = fromMaybe [] . Map.lookup (Pin.tag p)
-        narrow = filter (recognizes p)
+           | otherwise = cachePin p (doFirst =<< candidates) where
         doFirst [] = warn (NotFound p) *> pure Nothing
         doFirst [x] = pure $ Just x
         doFirst (x:xs) = warn (Ambiguous p $ x:xs) *> doFirst [x]
+        candidates = headOr [] . filter (not . null) <$> candidateLists
+        candidateLists = map dictCandidates <$> asks maps
+        dictCandidates = concatMap recognizers . Map.toList
+        recognizers (t, fs) | Pin.tag p == t = filter (recognizes p) fs
+                            | otherwise = []
 
 
     -- | Executes a function on each file, passing it the file uid and contents.
