@@ -13,7 +13,6 @@ import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
 import qualified Text.Tag as Tag
-import qualified Text.Symbols as Y
 
 
 -- A reference to another file and/or event
@@ -56,14 +55,12 @@ instance Parseable Pin where
         -- This will probably cause an error, but at least it will be
         -- the 'right' "no name" error.
         name <- if null names then Tag.tag else pure $ unwords names
-        optional halt
         pure Pin{ text = name
                 , categories = fromList $ Mods.categories mods
                 , qualifiers = fromList $ Mods.qualifiers mods }
         where pinPart = try (Left <$> Tag.tag)
                     <|> (Right <$> Mods.catOrQual)
                     <?> "text, category, or qualifier"
-              halt = whitespace >> string Y.halt >> whitespace >> pure ()
 
 instance Show Pin where
     show (Pin cs qs t) = printf "%s%s%s" (strip t) cstr qstr where
