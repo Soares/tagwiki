@@ -42,8 +42,8 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Text.Pin as Pin
 
-runInternal :: StateT Context (ReaderT Wiki IO) a -> Context -> Wiki -> IO (a, Context)
-runInternal fn ctx  = runReaderT (runStateT fn ctx)
+runInternal :: StateT Context (ReaderT Wiki IO) a -> Wiki -> IO a
+runInternal fn = fmap fst . runReaderT (runStateT fn clean)
 
 -- | Operations that can poke around the directory
 -- | TODO: relax constraints, use classes like Errorable/MonadState
