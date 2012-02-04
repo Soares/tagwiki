@@ -5,7 +5,6 @@ module Control.DateTime.Relative
     , minus
     , invert
     , clobber
-    , expression
     ) where
 import Control.Applicative hiding ( (<|>) )
 import Data.String.Utils
@@ -40,7 +39,7 @@ instance Show Relative where
         (shw " " h) (shw2 ":" p) (shw "." s) (shw "." x) where
         shw str = maybe str (printf "%s%d" str)
         shw2 str = maybe str (printf "%s%02d" str)
-        bad = mkRegex ":\\.\\."
+        bad = mkRegex ":?\\.\\."
         reduce a = strip $ subRegex bad a ""
 
 
@@ -80,6 +79,52 @@ right _ y = y
 
 -- | How to parse
 instance Parseable Relative where
+    parser = try full
+         <|> try date
+         <|> try time
+         <|> lonelyYear
+         <?> "a relative moment" where
+
+        full = plus <$> date <*> (whitespace *> time)
+        date = headDate <|> headlessDate <?> "relative date"
+        time = headTime <|> headlessTime <?> "relative time"
+
+        headDate = do
+            y <- number <* slash
+            m <- optionMaybe number
+            d <- slash *> optionMaybe number
+            pure $ Relative (Just y) m d Nothing Nothing Nothing Nothing
+        headlessDate = do
+            m <- slash *> optionMaybe number
+            d <- slash *> optionMaybe number
+            pure $ Relative Nothing m d Nothing Nothing Nothing Nothing
+
+        headTime = do
+            h <- number <* colin
+            p <- optionMaybe number
+            s <- optionMaybe $ dot *> number
+            x <- optionMaybe $ dot *> number
+            pure $ Relative Nothing Nothing Nothing (Just h) p s x
+
+        headlessTime = do
+            p <- colin *> optionMaybe number
+            s <- optionMaybe $ dot *> number
+            x <- optionMaybe $ dot *> number
+            pure $ Relative Nothing Nothing Nothing Nothing p s x
+
+        lonelyYear = do
+            y <- number
+            pure $ Relative (Just y) Nothing Nothing
+                Nothing Nothing Nothing Nothing
+
+slash, colin, dot :: GenParser Char st ()
+slash = string Y.dateSep *> return ()
+colin = string Y.minSep *> return ()
+dot = string Y.secSep *> return ()
+
+{-
+
+
     parser = try (fromList <$> (date >>= andTime))
          <|> try (fromList <$> date)
          <|> try (fromList <$> andTime [Nothing, Nothing, Nothing])
@@ -131,20 +176,34 @@ instance Parseable Relative where
             t <- headless ms
             return (h:t)
 
--- | Parse a whole expression of Relatives
-expression :: GenParser Char st Relative
-expression = operations `chainl1` (whitespace *> pure clobber)
+-}
 
-operations :: GenParser Char st Relative
+
+{-
+-- | Delayed expressions
+data Modification a
+    = Chain (Relative -> Relative) Relative Modification
+    | End (Relative -> Relative) Relative
+
+apply :: Modification ->
+
+instance Parseable Expression where
+    parser = operations `chainl1` (whitespace *> pure (Op clobber))
+
+reduce :: Absolute -> Expression -> Relative
+reduce _ (Simple rel) = rel
+reduce
+
+operations :: GenParser Char st Expression
 operations = term `chainl1` addsub where
-    addsub = try (add *> pure plus)
-         <|> (sub *> pure minus)
+    addsub = try (add *> pure (Op plus))
+         <|> (sub *> pure (Op minus))
          <?> "+/- date expression"
 
 -- 'simple' terms
-term :: GenParser Char st Relative
-term = try (between oparen cparen expression)
-   <|> floating parser
+term :: GenParser Char st Expression
+term = try (between oparen cparen parser)
+   <|> (Simple <$> floating parser)
    <?> "simple relative moment"
 
 
@@ -154,3 +213,4 @@ add = operator Y.addDate
 sub = operator Y.subDate
 oparen = operator Y.oParen
 cparen = operator Y.cParen
+-}

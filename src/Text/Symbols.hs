@@ -17,9 +17,10 @@ cDate = "}"
 oLink = "|"
 cLink = oLink
 
-addDate, subDate, startDate, unknownDate :: String
+addDate, subDate, startDate, clobDate, unknownDate :: String
 addDate = "+"
 subDate = "-"
+clobDate = "@"
 startDate = dateSep
 unknownDate = "?"
 
@@ -46,5 +47,5 @@ restrictedInText = concat [oLink, oDate, "\n"]
 restrictedInMods = concat
     [category, prefix, suffix, oQualifier, cQualifier, "\n"]
 restrictedInRefs = concat
-    [ oLink, cLink, halt, oQualifier, cQualifier, event, category, prefix
-    , suffix, oDate, cDate, dateRangeSep, addDate, subDate, startDate, "\n"]
+    [ oLink, cLink, oQualifier, cQualifier, event, category, prefix, suffix
+    , oDate, cDate, dateRangeSep, addDate, subDate, clobDate, startDate, "\n"]

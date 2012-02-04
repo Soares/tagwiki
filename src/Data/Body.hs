@@ -19,7 +19,7 @@ data Body = Body
     , events :: [Event]
     , apps   :: [Appearance]
     , units  :: [Unit]
-    } deriving Eq
+    }
 
 instance Fragment Body where
     resolve (Body at ev ap un) = intercalate "\n\n" <$> sections where

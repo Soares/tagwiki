@@ -1,11 +1,12 @@
 module Control.DateTime.Absolute
     ( Absolute(..)
+    , Modification(Done)
+    , apply
     , plus
     , minus
     , clobber
     , diff
     , invert
-    , expression
     , fromRel
     , toRel
     , normalize
@@ -134,6 +135,27 @@ instance Parseable Absolute where
             return (Absolute e y m d h p s x)
 
 
+
+data Modification
+    = Operation (Absolute -> Relative -> Absolute) Relative Modification
+    | Done
+
+instance Show Modification where
+    show (Operation _ rel m) = "Op (" ++ show rel ++ ") (" ++ show m ++ ")"
+    show Done = "Done"
+
+apply :: Absolute -> Modification -> Absolute
+apply a (Operation fn rel m) = apply (fn a rel) m
+apply a Done = a
+
+instance Parseable Modification where
+    parser = try (Operation clobber <$> (clob *> parser) <*> floating parser)
+        <|> try (Operation plus <$> (add *> parser) <*> floating parser)
+        <|> try (Operation minus <$> (sub *> parser) <*> floating parser)
+        -- TODO: remove <|> try (between oparen cparen parser)
+        <|> pure Done
+        {-
+
 -- | Parse a whole expression of absolute dates
 expression :: GenParser Char st Absolute
 expression = try (clobber <$> parser <*> (whitespace *> Relative.expression))
@@ -141,7 +163,9 @@ expression = try (clobber <$> parser <*> (whitespace *> Relative.expression))
          <|> try (plus <$> parser <*> (add *> Relative.expression))
          <|> parser
          <?> "absolute moment"
+         -}
 
-add, sub :: GenParser Char st ()
+add, sub, clob :: GenParser Char st ()
+clob = operator Y.clobDate
 add = operator Y.addDate
 sub = operator Y.subDate

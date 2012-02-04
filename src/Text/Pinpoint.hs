@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Text.Pinpoint ( Pinpoint(pin, point) ) where
+module Text.Pinpoint ( Pinpoint(..) ) where
 import Control.Applicative hiding ( (<|>), empty )
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki

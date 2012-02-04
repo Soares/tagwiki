@@ -15,7 +15,7 @@ data Attribute = Attr
     { key   :: String
     , value :: [Unit]
     , text  :: [Unit]
-    } deriving Eq
+    }
 
 instance Show Attribute where
     show (Attr k v _) = printf "%s: %s" (show k) (show v)

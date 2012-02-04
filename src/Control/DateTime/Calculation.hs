@@ -3,8 +3,7 @@ module Control.DateTime.Calculation
     , when
     ) where
 import Control.Applicative hiding ( (<|>) )
-import Control.DateTime.Absolute hiding ( expression )
-import Control.DateTime.Relative hiding ( expression, plus, minus, clobber )
+import Control.DateTime.Absolute
 import Internal
 import Text.Fragment
 import Text.ParserCombinators.Parsec
@@ -13,88 +12,67 @@ import Text.Point
 import Text.Pinpoint
 import Text.Printf
 import qualified Text.Symbols as Y
-import Control.DateTime.Absolute as Absolute
-import Control.DateTime.Relative as Relative hiding ( plus, minus, clobber )
 
-data Calculation = Exactly Expression
-                 | Range Expression Expression2
-                 deriving Eq
+data Calculation
+    = Exactly Expression
+    | AbsRange Expression Expression
+    | RelRange Expression Modification
+    deriving Show
 
-data Expression = Abs Absolute
-                | Clobber Pinpoint Relative
-                | Plus Pinpoint Relative
-                | Minus Pinpoint Relative
-                | PP Pinpoint
-                deriving Eq
+data Expression
+    = Mod Term Modification
+    | Simple Term
+    deriving Show
 
-data Expression2 = Simply Expression
-                 | More Relative
-                 | Less Relative
-                 deriving Eq
-
-instance Show Expression where
-    show (Abs a) = show a
-    show (Plus x y) = printf "%s + %s" (show x) (show y)
-    show (Minus x y) = printf "%s - %s" (show x) (show y)
-    show (Clobber x y) = printf "%s | %s" (show x) (show y)
-    show (PP pp) = show pp
-
-instance Show Expression2 where
-    show (Simply x) = show x
-    show (More x) = '+':show x
-    show (Less x) = '-':show x
+-- TODO: test
+-- {Kyte -51 @ /1/2}
+-- {Kyte -51/1/2 @ /3/4}
+data Term
+    = Abs Absolute
+    | PP Pinpoint
+    deriving Show
 
 instance Parseable Expression where
-    parser = try (Abs <$> Absolute.expression)
-         <|> try (Clobber <$> parser <*> Relative.expression)
-         <|> try (Plus <$> parser <*> (add *> Relative.expression))
-         <|> try (Minus <$> parser <*> (sub *> Relative.expression))
-         <|> try (PP <$> parser)
-         <?> "a date calculation opening date"
+    parser = try (Mod <$> parser <*> parser)
+         <|> (Simple <$> parser)
+         <?> "a date calculation expression"
 
-instance Parseable Expression2 where
-    parser = try (More <$> (operator Y.addDate *> Relative.expression))
-         <|> try (Less <$> (operator Y.subDate *> Relative.expression))
-         <|> (whitespace *> pure (Simply $ Abs Present))
-         <|> try (Simply . PP <$> parser)
-         <?> "a date calculation closing date"
-
-instance Show Calculation where
-    show (Exactly a) = printf "{%s}" (show a)
-    show (Range left right) = printf "{%s → %s}" (show left) (show right)
+instance Parseable Term where
+    parser = try (Abs <$> parser)
+         <|> (PP <$> parser)
+         <?> "a date calculation term"
 
 instance Parseable Calculation where
-    parser = try exact <|> range <?> "date calculation" where
+    parser = try exact <|> absRange <|> relRange <?> "date calculation" where
         obrace = char '{' >> anyWhite >> return ()
         cbrace = anyWhite >> char '}' >> return ()
         comma = operator Y.comma
-        exact = between obrace cbrace (Exactly <$> parser)
-        range = between obrace cbrace (Range <$> parser <*> (comma *> parser))
+        exact = between obrace cbrace
+            (Exactly <$> parser)
+        absRange = between obrace cbrace
+            (AbsRange <$> parser <*> (comma *> parser))
+        relRange = between obrace cbrace
+            (RelRange <$> parser <*> (comma *> parser))
 
 instance Fragment Calculation where
-    resolve (Exactly x) = show <$> when Auto x
-    resolve (Range x y) = do
-        wx <- when Auto x
-        wy <- whenEnd y =<< when Auto x
-        pure $ printf "%s → %s" (show wx) (show wy)
+    resolve (Exactly x) = show <$> moment x
+    resolve (RelRange x y) = printf "%s → %s" <$>
+        (show <$> moment x) <*> (show . endMoment y <$> moment x)
+    resolve (AbsRange x y) = printf "%s → %s" <$>
+        (show <$> moment x) <*> (show <$> moment y)
 
 instance Momented Calculation where
-    when End (Range x y) = when End x >>= whenEnd y
-    when s (Range x _) = when s x
-    when s (Exactly x) = when s x
+    when End (RelRange _ Done) = pure Present
+    when End (AbsRange _ y) = moment y
+    when End (RelRange x y) = endMoment y <$> moment x
+    when _ (AbsRange x _) = moment x
+    when _ (RelRange x _) = moment x
+    when _ (Exactly x) = moment x
 
-instance Momented Expression where
-    when _ (Abs a) = pure a
-    when _ (Plus pp rel) = flip plus rel <$> pinpoint pp
-    when _ (Minus pp rel) = flip minus rel <$> pinpoint pp
-    when _ (Clobber pp rel) = flip clobber rel <$> pinpoint pp
-    when _ (PP pp) = pinpoint pp
+moment :: (Internal i) => Expression -> i Absolute
+moment (Simple (Abs a)) = pure a
+moment (Simple (PP pp)) = pinpoint pp
+moment (Mod t m) = flip apply m <$> moment (Simple t)
 
-whenEnd :: (Internal i) => Expression2 -> Absolute -> i Absolute
-whenEnd (Simply x) _ = when Auto x
-whenEnd (More rel) x = pure $ plus x rel
-whenEnd (Less rel) x = pure $ minus x rel
-
-add, sub :: GenParser Char st ()
-add = operator Y.addDate
-sub = operator Y.subDate
+endMoment :: Modification -> Absolute -> Absolute
+endMoment = flip apply

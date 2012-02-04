@@ -20,7 +20,7 @@ import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Pin ( Pin )
-import Text.Point ( Point(side) )
+import Text.Point ( Point(..), Side(..) )
 import Text.Printf
 import Text.Render
 import qualified Control.Modifier as Mods
@@ -104,7 +104,7 @@ class Note a where
 
     -- Resolution of a point
     pointer :: (Internal i) => Maybe Point -> a -> i (Maybe Absolute)
-    pointer Nothing _ = pure Nothing
+    pointer Nothing r = pointer (Just Point{name="", side=Auto}) r
     pointer (Just pt) r = case event (Point.tag pt) (body r) of
         Just ev -> Just <$> when (side pt) ev
         Nothing -> pure Nothing

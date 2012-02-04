@@ -10,6 +10,7 @@ import qualified Data.Map as Map
 data Cache = Cache
     { refs  :: Map Reference Absolute
     , pins  :: Map Pin (Maybe File)
+    -- TODO: stop caching codes (applies to Context as well)
     , codes :: Map String (Maybe (Direction, Absolute))
     } deriving Show
 

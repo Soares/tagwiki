@@ -145,7 +145,7 @@ data Warning
     | NoSuchEra String
 instance Show Warning where
     show (NotFound p) = printf "Can't find '%s'" $ show p
-    show (Unknown p) = printf "Unknown moment: '%s'" $ show p
+    show (Unknown p) = printf "Unknown pinpoint: '%s'" $ show p
     show (NoSuchEra e) = printf "No such era: %s" e
     show (Ambiguous p fs) = printf "Ambiguities looking for %s\n\t%s"
         (show p) (intercalate "\n\t" $ map show fs)

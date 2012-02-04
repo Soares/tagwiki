@@ -12,7 +12,7 @@ import qualified Text.Symbols as Y
 data Appearance = App
     { ref  :: Pinpoint
     , text :: [Unit]
-    } deriving Eq
+    }
 
 instance Show Appearance where
     show (App r _) = '@':show r

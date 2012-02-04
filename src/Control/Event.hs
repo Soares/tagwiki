@@ -21,7 +21,7 @@ data Event = Event
     { name :: String
     , at   :: Maybe Calculation
     , text :: [Unit]
-    } deriving Eq
+    }
 
 tag :: Event -> String
 tag = normalize . name

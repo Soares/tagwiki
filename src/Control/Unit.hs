@@ -16,7 +16,6 @@ import qualified Text.Symbols as Y
 data Unit = Str String
           | Dxp Calculation
           | Lnk Pinpoint [Unit]
-          deriving Eq
 
 instance Show Unit where
     show (Str s) = show s

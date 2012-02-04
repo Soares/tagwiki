@@ -1,4 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
+-- TODO: add subblock attributes
+--      Use them for timezone & size on places
+--      Use them for legend on events & appearances
 module Main where
 import Control.Applicative
 import Control.Dangerous hiding ( Warning )
