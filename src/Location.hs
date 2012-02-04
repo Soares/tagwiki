@@ -21,10 +21,12 @@ data (Note n) => Bubble n = Bubble
     }
 
 -- Internally resolve a map of i.e. Place -> Pin into a map of Place -> Place
+-- TODO: where did Kaolina go?
+-- TODO: where did Earth go?
 normalize :: (Internal i, Ord n, Note n) => Map n Pin -> i (Map n n)
 normalize orig = Map.foldWithKey rebuild (pure Map.empty) orig where
-    rebuild k p imap = maybe imap update =<< resolve orig p where
-        update v = Map.insert k v <$> imap
+    rebuild k n idict = maybe idict update =<< resolve orig n where
+        update v = Map.insert k v <$> idict
 
 -- Find a note from a pin
 resolve :: (Internal i, Ord n, Note n) => Map n Pin -> Pin -> i (Maybe n)
@@ -32,6 +34,8 @@ resolve dict pin = (findByUid . uid =<<) <$> find pin where
     findByUid i = List.find ((== i) . uid) $ Map.keys dict
 
 -- Generate an edge, which contains the note, the uid of the note, and
+-- TODO: what's happening to leaves?
+-- Whene did Kindal go?
 -- the uids of all children of the note
 edge :: (Note n, Ord n) => Map n n -> n -> (n, Int, [Int])
 edge dict n = (,,) n (uid n) (map uid $ children dict n)

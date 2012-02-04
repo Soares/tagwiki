@@ -103,19 +103,21 @@ record :: forall a. Note a => Wiki -> FilePath -> a -> Wiki
 record w n f = w{ listing = Map.insert n (File f) (listing w) }
 
 recordEra :: Wiki -> FilePath -> Era -> Wiki
-recordEra w n e = (record w n e){ eras = update (eras w) } where
+recordEra w n e = w'{ eras = update (eras w') } where
     update dict = Map.unions [dict, afters dict, befores dict]
     afters = makeDict $ codes e
     befores = makeDict $ precodes e
     makeDict ks dict = foldr insert dict ks
     insert code = Map.insert code e
+    w' = record w n e
 
 recordCharacter :: Wiki -> FilePath -> Character -> Wiki
 recordCharacter = record
 
 recordPlace :: Wiki -> FilePath -> Place -> Wiki
-recordPlace w n p = (record w n p){ places = update (places w) } where
+recordPlace w n p = w'{ places = update (places w') } where
     update = maybe id (Map.insert p) (parent p)
+    w' = record w n p
 
 -- Directory building
 
