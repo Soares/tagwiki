@@ -11,9 +11,10 @@ import Control.Monad.Reader
 import Data.File
 import Data.List ( sort, intercalate )
 import Data.Maybe
+import Data.Tree ( drawTree )
 import Data.Wiki
 import Internal hiding ( when )
-import Location ( normalize, display )
+import Location ( bubbleTree, sorted, forest, unify )
 import Note ( text, parseNote )
 import Note.Character
 import Note.Era
@@ -26,23 +27,25 @@ import Text.Printf
 import System.Console.GetOpt
 
 data Options = Options
-    { optRoot      :: FilePath
-    , optSourceDir :: FilePath
-    , optBuildDir  :: Maybe FilePath
-    , optTagFile   :: Maybe FilePath
-    , optPlaceTree :: Bool
-    , optHelp      :: Bool
+    { optRoot       :: FilePath
+    , optSourceDir  :: FilePath
+    , optBuildDir   :: Maybe FilePath
+    , optTagFile    :: Maybe FilePath
+    , optPlaceTree  :: Bool
+    , optBubbleTree :: Bool
+    , optHelp       :: Bool
     } deriving Show
 
 
 defaultOptions :: Options
 defaultOptions = Options
-    { optRoot      = "."
-    , optSourceDir = "src"
-    , optBuildDir  = Nothing
-    , optTagFile   = Nothing
-    , optPlaceTree = False
-    , optHelp      = False
+    { optRoot       = "."
+    , optSourceDir  = "src"
+    , optBuildDir   = Nothing
+    , optTagFile    = Nothing
+    , optPlaceTree  = False
+    , optBubbleTree = False
+    , optHelp       = False
     }
 
 
@@ -71,6 +74,10 @@ options =
     , Option "p" ["tree"]
         (NoArg (\opt -> opt{optPlaceTree = True}))
         "output a tree of the places in the wiki"
+
+    , Option "u" ["bubble"]
+        (NoArg (\opt -> opt{optBubbleTree = True}))
+        "output a bubble tree of the places in the wiki"
 
     , Option "h" ["help"]
         (NoArg (\opt -> opt{optHelp = True}))
@@ -103,11 +110,12 @@ main = run =<< dangerously =<< configure <$> getProgName <*> getArgs
 
 run :: Options -> IO ()
 run opts = do
-    let Options { optRoot      = root
-                , optBuildDir  = bld
-                , optSourceDir = src
-                , optTagFile   = tagFile
-                , optPlaceTree = drawTree
+    let Options { optRoot       = root
+                , optBuildDir   = bld
+                , optSourceDir  = src
+                , optTagFile    = tagFile
+                , optPlaceTree  = drawPlaces
+                , optBubbleTree = bubble
                 } = opts
 
     files <- locate $ root </> src
@@ -120,15 +128,20 @@ run opts = do
         writeFile dest contents
 
     flip runInternal wiki $ do
+        let ioPutStrLn = liftIO . putStrLn
+        let ioPrint = ioPutStrLn . show
+        let ioLineFeed = ioPutStrLn ""
         when (isJust bld) $ do
             let dest = root </> fromJust bld
             let writer = doWrite . (dest </>)
             liftIO $ clearDir dest
-            build writer *> liftIO (putStrLn "")
-        when drawTree $ do
-            dict <- normalize =<< asks places
-            let printLn = liftIO . putStrLn
-            mapM_ printLn $ lines $ display dict
+            build writer *> ioLineFeed
+        when (bubble || drawPlaces) $ do
+            dict <- remap =<< asks places
+            let tree = unify everywhere $ forest dict
+            let drawing = drawTree $ sorted $ fmap show tree
+            when drawPlaces $ mapM_ ioPutStrLn $ lines drawing
+            when bubble $ ioPrint $ bubbleTree tree
 
 
 clearDir :: FilePath -> IO ()

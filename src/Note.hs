@@ -1,12 +1,13 @@
 module Note
     ( Note(..)
     , Basic(modifiers)
+    , empty
     , parseBasic
     , parseNote
     , prefixes
     , suffixes
     ) where
-import Control.Applicative
+import Control.Applicative hiding ( empty )
 import Control.DateTime.Absolute
 import Control.Modifier ( Modifier )
 import Control.Name
@@ -25,6 +26,7 @@ import Text.Printf
 import Text.Render
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
+import qualified Data.Body as Body
 import qualified Text.Pin as Pin
 import qualified Text.Point as Point
 import qualified Text.Symbols as Y
@@ -36,6 +38,8 @@ data Basic = Basic
     , _body       :: Body
     } deriving Show
 
+empty :: Basic
+empty = Basic (-1) [] [] Body.empty
 
 -- | Helpers for people manipulating bodies in common cases
 -- | (useful for most notes, but not notes in general)

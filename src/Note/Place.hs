@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Note.Place where
 import Control.Appearance
 import Control.Applicative hiding ( (<|>) )
@@ -6,10 +7,9 @@ import Data.Body
 import Data.Function
 import Data.String.Utils ( strip )
 import Data.Utils
+import Location
 import Note
-import Text.ParserCombinators.Parsec ( GenParser, parse )
-import Text.ParserCombinators.Parsec.Error ( errorMessages, messageString )
-import Text.ParserCombinators.TagWiki
+import Text.ParserCombinators.Parsec ( GenParser )
 import Text.Pin ( Pin )
 import Text.Pinpoint ( pin )
 import Text.Printf
@@ -17,20 +17,34 @@ import Text.Utils
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
 
--- TODO: add time zone field.
-data Place = Place
-    { base :: Basic
-    , size :: Double
-    } deriving Eq
+newtype Place = Place { base :: Basic } deriving Eq
+
+everywhere :: Place
+everywhere = Place Note.empty
+
+-- TODO
+size :: Place -> Rational
+size = const 1
+
+-- TODO
+timezone :: Place -> Int
+timezone = const 1
 
 parent :: Place -> Maybe Pin
 parent = fmap (pin . ref) . maybeHead . apps . body
 
 instance Ord Place where (<=) = (<=) `on` uid
 instance Show Place where show = primaryName
+instance Bubble Place where
+    label = primaryName
+    amount = size
 
 instance Note Place where
     basic = base
+
+-- | The name of the empty place is «everywhere»
+    primaryName p | null $ names $ basic p = "«everywhere»"
+                  | otherwise = primaryName $ basic p
 
 -- | If you have the following place:
 -- |
@@ -88,9 +102,5 @@ instance Note Place where
 
 
 parsePlace :: Int -> GenParser Char st Place
-parsePlace i = do
-    b <- parseBasic i Mods.anyMod
-    case parse real "place" (headOr "1" $ prefixes b) of
-        Right dub -> pure $ Place b dub
-        Left err -> fail $ errmsg err where
-            errmsg = unlines . map messageString . errorMessages
+parsePlace i = Place <$> parseBasic i (Mods.parse mods) where
+    mods = [Mods.category, Mods.qualifier, Mods.suffix]

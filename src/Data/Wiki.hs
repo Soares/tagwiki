@@ -10,6 +10,7 @@ module Data.Wiki
     , recordEra
     , recordPlace
     , recordCharacter
+    , remap
     , tagList
     , build
     ) where
@@ -25,7 +26,7 @@ import Control.Name ( priorities, ofPriority )
 import Data.File ( File(File) )
 import Data.List ( intercalate, sort )
 import Data.Map ( Map )
-import Data.Utils ( headOr )
+import Data.Utils ( headOr, thread )
 import Internal ( Internal(..) )
 import Note ( Note(tags, uid, pointer, names, recognizes) )
 import Note.Era ( Era, codes, precodes )
@@ -37,6 +38,7 @@ import Text.Pinpoint ( Pinpoint, pin, point )
 import Text.Printf ( printf )
 import Text.Render ( link, href )
 import Text.Utils
+import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Text.Pin as Pin
@@ -91,7 +93,7 @@ instance Internal (StateT Context (ReaderT Wiki IO)) where
 
 data Wiki = Wiki
     { listing :: Map FilePath File
-    , places  :: Map Place Pin
+    , places  :: Map Place (Maybe Pin)
     , eras    :: Map String Era
     }
 
@@ -115,9 +117,16 @@ recordCharacter :: Wiki -> FilePath -> Character -> Wiki
 recordCharacter = record
 
 recordPlace :: Wiki -> FilePath -> Place -> Wiki
-recordPlace w n p = w'{ places = update (places w') } where
-    update = maybe id (Map.insert p) (parent p)
-    w' = record w n p
+recordPlace w n p = w'{ places = Map.insert p (parent p) (places w') }
+    where w' = record w n p
+
+-- | Internally resolve a map of i.e. Place -> Pin into a map of Place -> Place
+remap :: (Internal i, Ord n, Note n) => Map n (Maybe Pin) -> i (Map n (Maybe n))
+remap orig = Map.foldWithKey rebuild (pure Map.empty) orig where
+    rebuild n mp idict = Map.insert n <$> thread (resolve orig) mp <*> idict
+    -- find the note :: (Map n (Maybe Pin)) -> Pin -> i (Maybe n)
+    resolve dict p = (findByUid . uid =<<) <$> find p where
+        findByUid i = List.find ((== i) . uid) $ Map.keys dict
 
 -- Directory building
 

@@ -21,3 +21,7 @@ zipAll :: (a -> a -> a) -> [a] -> [a] -> [a]
 zipAll _ [] a = a
 zipAll _ a [] = a
 zipAll f (x:xs) (y:ys) = f x y:zipAll f xs ys
+
+-- TODO: what _is_ this?
+thread :: (Monad m) => (a -> m (Maybe a1)) -> Maybe a -> m (Maybe a1)
+thread = maybe (return Nothing)
