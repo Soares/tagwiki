@@ -1,0 +1,38 @@
+!!!
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>#{primaryName note}
+  <body>
+    <h1>#{primaryName note}
+    $if not $ null qualifiers
+      <ul #qualifiers>
+        $forall qualifier <- qualifiers note
+          <li>#{qualifier}
+    $if not $ null pseudonyms
+      <ul #pseudonyms>
+        $forall pseudonym <- pseudonyms note
+          <li>#{pseudonym}
+    $if not $ null categories
+      <ul #categories>
+        $forall category <- categories note
+          <li>
+            <a href=@{Category category}>#{category}
+    <section #table-of-contents>
+      <a href="#events">Events
+      <a href="#appearances">Appearances
+      <a href="#attributes">Attributes
+      <a href="#notes">Notes
+    <section #events>
+      $forall event <- events note
+        #{event}
+    <section #appearances>
+      $forall appearance <- appearances note
+        #{appearance}
+    <section #attributes>
+      <table>
+        <body>
+          $forall attr <- attributes note
+            #{attr}
+    <section #notes>
+      #{body note}
