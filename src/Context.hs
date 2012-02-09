@@ -4,8 +4,9 @@ module Context ( Context, Contextual(..), clean ) where
 import Control.Applicative hiding ( empty )
 import Control.Dangerous hiding ( Warning )
 import Control.Dangerous.Extensions()
-import Control.DateTime.Moment
+import Control.DateTime.Absolute
 import Control.Monad.State hiding ( guard )
+import Internal
 import Text.Pin ( Pin )
 import Text.Point ( Point )
 import Context.Cache
@@ -22,13 +23,13 @@ clean = Context empty home
 
 
 class (Errorable m, MonadState Context m, Applicative m) => Contextual m where
-    cacheOffset :: String -> m (Maybe Offset) -> m (Maybe Offset)
+    cacheOffset :: String -> m (Maybe (Direction, Absolute)) -> m (Maybe (Direction, Absolute))
     cacheOffset = cached getCode putCode
 
     doWithEra :: String -> m a -> m a
     doWithEra str fn = pushEra str *> guard Cycle *> fn <* popEra
 
-    cacheRef :: File -> Maybe Point -> m Moment -> m Moment
+    cacheRef :: File -> Maybe Point -> m Absolute -> m Absolute
     cacheRef p pt = cached getRef putRef (p, pt)
 
     doWithRef :: File -> Maybe Point -> m a -> m a

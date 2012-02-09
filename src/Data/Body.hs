@@ -19,7 +19,10 @@ data Body = Body
     , events :: [Event]
     , apps   :: [Appearance]
     , units  :: [Unit]
-    } deriving Eq
+    }
+
+empty :: Body
+empty = Body [] [] [] []
 
 instance Fragment Body where
     resolve (Body at ev ap un) = intercalate "\n\n" <$> sections where
@@ -36,9 +39,6 @@ event :: String -> Body -> Maybe Event
 event str = maybeHead . filter (recognizes str) . events
 
 -- Parsing
-empty :: Body
-empty = Body [] [] [] []
-
 instance Parseable Body where
     parser = foldr id empty <$> fill `manyTill` eof
 

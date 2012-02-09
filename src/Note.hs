@@ -1,14 +1,14 @@
 module Note
     ( Note(..)
     , Basic(modifiers)
+    , empty
     , parseBasic
     , parseNote
     , prefixes
     , suffixes
     ) where
-import Control.Applicative
-import Control.DateTime.Moment ( Moment )
-import Control.Event ( at )
+import Control.Applicative hiding ( empty )
+import Control.DateTime.Absolute
 import Control.Modifier ( Modifier )
 import Control.Name
 import Data.Body ( Body, event )
@@ -21,11 +21,12 @@ import Text.Fragment
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.TagWiki
 import Text.Pin ( Pin )
-import Text.Point ( Point(side) )
+import Text.Point ( Point(..), Side(..) )
 import Text.Printf
 import Text.Render
 import qualified Control.Modifier as Mods
 import qualified Data.Set as Set
+import qualified Data.Body as Body
 import qualified Text.Pin as Pin
 import qualified Text.Point as Point
 import qualified Text.Symbols as Y
@@ -37,6 +38,8 @@ data Basic = Basic
     , _body       :: Body
     } deriving Show
 
+empty :: Basic
+empty = Basic (-1) [] [] Body.empty
 
 -- | Helpers for people manipulating bodies in common cases
 -- | (useful for most notes, but not notes in general)
@@ -104,10 +107,10 @@ class Note a where
     primaryName = headOr "" . map namePart . names
 
     -- Resolution of a point
-    pointer :: (Internal i) => Maybe Point -> a -> i (Maybe Moment)
-    pointer Nothing _ = pure Nothing
+    pointer :: (Internal i) => Maybe Point -> a -> i (Maybe Absolute)
+    pointer Nothing r = pointer (Just Point{name="", side=Auto}) r
     pointer (Just pt) r = case event (Point.tag pt) (body r) of
-        Just ev -> at (side pt) ev
+        Just ev -> Just <$> when (side pt) ev
         Nothing -> pure Nothing
 
     -- Render the record as text

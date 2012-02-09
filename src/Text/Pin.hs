@@ -1,10 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Text.Pin ( Pin(..), tag, empty, simple, isSelf, fromName ) where
-import Control.Applicative hiding ( many, (<|>), empty )
+import Control.Applicative hiding ( many, (<|>), empty, optional )
 import Control.Name
 import Data.Either
 import Data.List hiding ( find )
--- TODO: rm MasterSet
 import Data.Set ( Set, fromList )
 import Data.String.Utils ( strip )
 import Text.ParserCombinators.Parsec

@@ -16,16 +16,6 @@ real = read <$> str where
     decimal = char '.' *> int
     int = many1 digit
 
--- Parses zero or more digits, returning an Int if there were any digits
-maybeInt :: GenParser Char st (Maybe Int)
-maybeInt = many digit >>= \nums -> return $ case nums of
-    "" -> Nothing
-    x -> Just $ read x
-
--- Given a mark, parses either the mark alone, the mark and an int, or nothing
-markedInt :: GenParser Char st () -> GenParser Char st (Maybe Int)
-markedInt mark = try (mark *> maybeInt) <|> return Nothing
-
 -- \s → \\\\
 quadrupleHack :: GenParser Char st String
 quadrupleHack = hack *> char 's' *> return "\\\\\\\\"
